@@ -1,0 +1,26 @@
+{
+  "name": "kao",
+  "version": "1.0.0",
+  "description": "Koa is Awesome Oh yeah!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo what is test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/waksana/kao.git"
+  },
+  "keywords": [
+    "koa",
+    "router"
+  ],
+  "author": "waksana",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/waksana/kao/issues"
+  },
+  "homepage": "https://github.com/waksana/kao",
+  "dependencies": {
+    "koa-router": "^3.7.0"
+  }
+}

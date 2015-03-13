@@ -49,8 +49,12 @@ function checker(data, fields) {
 
 function annotate(fn) {
   var part = fn.toString().split(')')[0];
-  return part
+  var args = part
   .substr(part.indexOf('(') + 1)
   .split(',')
   .map(function(p) {return p.trim();});
+  if(args.length == 1 && args[0] == '') {
+    args = [];
+  }
+  return args;
 }

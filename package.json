@@ -1,6 +1,6 @@
 {
   "name": "kao",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Koa is Awesome Oh yeah!",
   "main": "index.js",
   "scripts": {

@@ -1,6 +1,6 @@
 {
   "name": "koa-gate",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "koa-gate helps you to build api quickly",
   "main": "index.js",
   "scripts": {

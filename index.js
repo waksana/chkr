@@ -1,16 +1,16 @@
 var Router = require('koa-router');
 var util = require('util');
 
-var Kao = module.exports = function() {
+var Gate = module.exports = function() {
   this._fields = {};
   this.router = new Router();
 };
 
-Kao.prototype.check = function(field, checker) {
+Gate.prototype.check = function(field, checker) {
   this._fields[field] = checker;
 };
 
-Kao.prototype.route = function(cmd, fn) {
+Gate.prototype.route = function(cmd, fn) {
   cmd = cmd.split(' ');
   var args = annotate(fn);
   var fields = this._fields;
@@ -32,7 +32,7 @@ Kao.prototype.route = function(cmd, fn) {
   });
 };
 
-Kao.prototype.middleware = function() {
+Gate.prototype.middleware = function() {
   return this.router.middleware();
 };
 

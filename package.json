@@ -1,14 +1,14 @@
 {
-  "name": "kao",
+  "name": "koa-gate",
   "version": "1.0.1",
-  "description": "Koa is Awesome Oh yeah!",
+  "description": "koa-gate helps you to build api quickly",
   "main": "index.js",
   "scripts": {
     "test": "echo what is test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/waksana/kao.git"
+    "url": "https://github.com/waksana/koa-gate.git"
   },
   "keywords": [
     "koa",
@@ -17,9 +17,9 @@
   "author": "waksana",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/waksana/kao/issues"
+    "url": "https://github.com/waksana/koa-gate/issues"
   },
-  "homepage": "https://github.com/waksana/kao",
+  "homepage": "https://github.com/waksana/koa-gate",
   "dependencies": {
     "koa-router": "^3.7.0"
   }

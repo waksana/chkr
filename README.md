@@ -1,12 +1,12 @@
-kao
+koa-gate
 ===
 
-Koa is Awesome Oh yeah
+koa-gate helps you to build api quickly
 
 ```javascript
-var Kao = require('kao');
-var k = new Kao();
-k.check('field', function() {
+var Gate = require('koa-gate');
+var gate = new Gate();
+gate.check('field', function() {
   if(!('field' in this))
     throw new Error('i need this field');
   if('string' == this.field) {
@@ -19,9 +19,9 @@ k.check('field', function() {
 });
 
 // you can pass arguments with body query or url
-k.route('get /hello/:field', function *(field, field2, whatever) {
+gate.route('get /hello/:field', function *(field, field2, whatever) {
   this.body = 'hehe';
 });
 
-app.use(k.middleware());
+app.use(gate.middleware());
 ```

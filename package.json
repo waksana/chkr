@@ -22,5 +22,8 @@
   "homepage": "https://github.com/waksana/koa-gate",
   "dependencies": {
     "koa-router": "^3.7.0"
+  },
+  "devDependencies": {
+    "koa": "^0.21.0"
   }
 }

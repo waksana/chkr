@@ -2,27 +2,26 @@ var Router = require('koa-router');
 var util = require('util');
 
 var Gate = module.exports = function() {
-  this._fields = {};
+  this._checkers = {};
   this.router = new Router();
 };
 
 Gate.prototype.check = function(field, checker) {
-  this._fields[field] = checker;
+  this._checkers[field] = checker;
 };
 
 Gate.prototype.route = function(cmd, fn) {
   cmd = cmd.split(' ');
   var args = annotate(fn);
-  var fields = this._fields;
+  var checkers = this._checkers;
   this.router[cmd[0]](cmd[1], function *() {
     var data = {};
     util._extend(data, this.request.body);
     util._extend(data, this.query);
     util._extend(data, this.params);
-    data._userId = this.token;
     data.method = this.method;
     try{
-      var params = args.map(checker(data, fields));
+      var params = yield Promise.all(args.map(check(data, checkers)));
       this.body = yield fn.apply(this, params);
     }
     catch(e) {
@@ -36,11 +35,12 @@ Gate.prototype.middleware = function() {
   return this.router.middleware();
 };
 
-function checker(data, fields) {
+function check(data, checkers) {
   return function(field) {
     var value = data[field];
-    if(fields[field])
-      return fields[field].call(data);
+    var checker = checkers[field];
+    if(checker)
+      return checker.call(data);
     if(value != undefined && value != null)
       return value;
     throw new Error(field + ' is required');

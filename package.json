@@ -20,10 +20,10 @@
     "url": "https://github.com/waksana/koa-gate/issues"
   },
   "homepage": "https://github.com/waksana/koa-gate",
-  "dependencies": {
-    "koa-router": "^3.7.0"
-  },
   "devDependencies": {
     "koa": "^0.21.0"
+  },
+  "dependencies": {
+    "koa-router": "^5.1.2"
   }
 }

@@ -32,7 +32,7 @@ Gate.prototype.route = function(cmd, fn) {
 };
 
 Gate.prototype.middleware = function() {
-  return this.router.middleware();
+  return this.router.routes();
 };
 
 function check(data, checkers) {

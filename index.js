@@ -40,7 +40,7 @@ function check(data, checkers) {
     var value = data[field];
     var checker = checkers[field];
     if(checker)
-      return checker.call(data);
+      return checker.call(data, field);
     if(value != undefined && value != null)
       return value;
     throw new Error(field + ' is required');

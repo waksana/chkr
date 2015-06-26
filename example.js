@@ -9,7 +9,7 @@ app.listen(3000, function() {
   console.log('example start @port 3000');
 });
 
-gate.check('field', function() {
+gate.check('field', function(field) {
   if(!('field' in this))
     throw new Error('i need this field');
   if('string' == typeof this.field) {

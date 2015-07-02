@@ -24,6 +24,7 @@
     "koa": "^0.21.0"
   },
   "dependencies": {
-    "koa-router": "^5.1.2"
+    "koa-router": "^5.1.2",
+    "object-hash": "^0.8.0"
   }
 }

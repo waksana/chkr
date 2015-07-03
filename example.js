@@ -12,32 +12,58 @@ app.listen(3000, function() {
 });
 
 
-gate.route('get /world/:string', function *(string, number, boolean, date) {
+gate.route('get /test/:string', function *(string, number, boolean, date, obj) {
   assert('string' == typeof string);
   assert('number' == typeof number);
   assert('boolean' == typeof boolean);
   assert(date instanceof Date);
+  console.log(obj);
   return string;
 });
 
-gate.check('string', check({
+Gate.check('obj', {
+  type: 'object',
+  field1: {
+    optional: false,
+    regular: /regularexp/
+  },
+  command: function(data) {
+    //all data
+    console.log(data);
+    return 'command value';
+  },
+  cascading: {
+    type: 'object',
+    field2: {
+      optional: false,
+      type: 'number'
+    },
+    command2: function() {
+      return new Promise(function(res, rej) {
+        res('generate value in promise');
+      });
+    }
+  }
+});
+
+Gate.check('string', {
   optional: false,
   regular: /^apple$|^banana$/
-}));
+});
 
-gate.check('number', check({
+Gate.check('number', {
   type: 'number',
   defaultValue: 5,
   max: 10,
   min: 0
-}));
+});
 
-gate.check('boolean', check({
+Gate.check('boolean', {
   type: 'boolean',
   optional: false
-}));
+});
 
-gate.check('date', check({
+Gate.check('date', {
   type: 'date',
   optional: false
-}));
+});

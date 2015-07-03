@@ -4,7 +4,8 @@
   "description": "koa-gate helps you to build api quickly",
   "main": "index.js",
   "scripts": {
-    "test": "echo what is test"
+    "test": "mocha --reporter spec test/index",
+    "test-cov": "node ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha"
   },
   "repository": {
     "type": "git",
@@ -21,7 +22,11 @@
   },
   "homepage": "https://github.com/waksana/koa-gate",
   "devDependencies": {
-    "koa": "^0.21.0"
+    "istanbul": "^0.3.17",
+    "koa": "^0.21.0",
+    "mocha": "^2.2.5",
+    "should": "^7.0.1",
+    "supertest": "^1.0.1"
   },
   "dependencies": {
     "koa-router": "^5.1.2",

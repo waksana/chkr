@@ -1,6 +1,5 @@
 var koa = require('koa');
 var Gate = require('./');
-var check = Gate.check;
 var assert = require('assert');
 
 var app = koa();

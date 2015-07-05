@@ -16,12 +16,7 @@ describe('assemble command', function() {
   });
 
   it('register a type declear object', function(done) {
-    assemble.command('type', {
-      type: 'number',
-      min: 10,
-      max: 20,
-      optional: false
-    });
+    assemble.command('type', 'number!');
     assemble({type: "12"}, ['type']).then(function(result) {
       result.should.eql([12]);
       done();
@@ -33,22 +28,14 @@ describe('assemble command', function() {
       typeField: '1234'
     };
     assemble.command('ever', {
-      type: 'object',
       funField: function(data, field) {
         data.should.be.equal(rawData);
         field.should.equal('funField');
         return 'rawFunValue';
       },
-      typeField: {
-        type: 'number',
-        optional: false
-      },
+      typeField: 'number!',
       objField: {
-        type: 'object',
-        typeField2: {
-          type: 'boolean',
-          defaultValue: true
-        },
+        typeField2: 'boolean!:true',
         funField2: function(data, field) {
           data.should.be.equal(rawData);
           field.should.equal('funField2');
@@ -68,12 +55,11 @@ describe('assemble command', function() {
       done();
     });
   });
-
 });
 
 describe('assemble error', function() {
   it('thorw an error in type check', function() {
-    assemble.bind(this, {type: 9}, ['type']).should.throwError(/min/);
+    assemble.bind(this, {}, ['type']).should.throwError(/required/);
   });
   it('throw an error in fun', function() {
     assemble.command('errFun', function() {
@@ -83,11 +69,18 @@ describe('assemble error', function() {
   });
   it('throw an error in deep', function() {
     assemble.command('errObj', {
-      type: 'object',
       errGen: function() {
         throw new Error('test deep error');
       }
     });
     assemble.bind(this, {}, ['errObj']).should.throwError('test deep error');
+  });
+
+  it('can not generate the assemble fun', function() {
+    assemble.command.bind(this, {}, 'string!').should.throwError(/command/);
+    assemble.command.bind(this, 'cmd', null).should.throwError(/not regular/);
+    assemble.command.bind(this, 'cmd2', {
+      nullField: null
+    }).should.throwError(/not regular/);
   });
 });

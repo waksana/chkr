@@ -23,4 +23,11 @@ describe('gate mount', function() {
   it('return the error generate by assembler', function(done) {
     request(server).get('/test/value').expect('k2 is required!', done);
   });
+
+  it('handles the zero args situation', function(done) {
+    gate.route('get /test', function* () {
+      return 'all right';
+    });
+    request(server).get('/test').expect('all right', done);
+  });
 });

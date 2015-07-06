@@ -8,24 +8,25 @@ describe('type prepare', function() {
   });
 
   it('should cache checker with same config', function() {
-    var checker1 = typeChecker('string?:test');
-    var checker2 = typeChecker('string?:test');
+    var checker1 = typeChecker('string:test');
+    var checker2 = typeChecker('string:test');
     checker1.should.equal(checker2);
 
     //for coverage
-    var c3 = typeChecker('string!:sooooooooooooooooooooooooooooooooooolong');
-    var c4 = typeChecker('string!:sooooooooooooooooooooooooooooooooooolong');
+    var c3 = typeChecker('string:soooooooooooooooooooooooooooooooooooolong');
+    var c4 = typeChecker('string:soooooooooooooooooooooooooooooooooooolong');
     c3.should.equal(c4);
   });
 
   it('should check default value', function() {
-    typeChecker.bind(this, 'number!:NaN').should.throwError('not a number');
+    typeChecker.bind(this, 'number:NaN').should.throwError('not a number');
   });
 
   it('throw an error when type not accepted', function() {
     typeChecker.bind(this, 'notatype!').should.throw();
     typeChecker.bind(this, 'string?no:').should.throw();
-    typeChecker.bind(this, 'boolean:default').should.throw();
+    typeChecker.bind(this, 'boolean!:default').should.throw();
+    typeChecker.bind(this, 'boolean?:default').should.throw();
     typeChecker.bind(this, 'number?:bbb').should.throw()
   });
 
@@ -41,7 +42,7 @@ describe('type checkers', function() {
   });
 
   it('should return default value', function() {
-    var checker = typeChecker('boolean!:true');
+    var checker = typeChecker('boolean:true');
 
     checker.bind(this, {
       field: 'not true or false'

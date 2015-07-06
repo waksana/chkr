@@ -35,7 +35,7 @@ describe('assemble command', function() {
       },
       typeField: 'number!',
       objField: {
-        typeField2: 'boolean!:true',
+        typeField2: 'boolean:true',
         funField2: function(data, field) {
           data.should.be.equal(rawData);
           field.should.equal('funField2');

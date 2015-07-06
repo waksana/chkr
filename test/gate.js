@@ -31,3 +31,27 @@ describe('gate mount', function() {
     request(server).get('/test').expect('all right', done);
   });
 });
+
+describe('mount a resource', function() {
+  before(function() {
+    gate.resource('/doc/:docId', {
+      'create': function *() {return 'posted';},
+      'read': function *(docId) {
+        docId.should.equal('docid');
+        return docId;
+      },
+      'query': function *(field) {return field;}
+    });
+  });
+  it('register the creation', function(done) {
+    request(server).post('/doc').expect('posted', done);
+  });
+
+  it('attach docId in get method', function(done) {
+    request(server).get('/doc/docid').expect('docid', done);
+  });
+
+  it('attach docId in get method', function(done) {
+    request(server).get('/doc?field=query').expect('query', done);
+  });
+});

@@ -31,7 +31,6 @@
     "supertest": "^1.0.1"
   },
   "dependencies": {
-    "koa-router": "^5.1.2",
-    "object-hash": "^0.8.0"
+    "koa-router": "^5.1.2"
   }
 }

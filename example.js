@@ -10,7 +10,6 @@ app.listen(3000, function() {
   console.log('example start @port 3000');
 });
 
-
 gate.route('get /test/:string', function *(string, number, boolean, date, obj) {
   assert('string' == typeof string);
   assert('number' == typeof number);

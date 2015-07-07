@@ -54,4 +54,8 @@ describe('mount a resource', function() {
   it('attach docId in get method', function(done) {
     request(server).get('/doc?field=query').expect('query', done);
   });
+
+  it('do not accept the no doc path', function() {
+    gate.resource.bind(gate, '/doc/notvariable', {}).should.throwError('basename of a resource should be a variable');
+  });
 });

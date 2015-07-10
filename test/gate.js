@@ -56,6 +56,10 @@ describe('mount a resource', function() {
   });
 
   it('do not accept the no doc path', function() {
-    gate.resource.bind(gate, '/doc/notvariable', {}).should.throwError('basename of a resource should be a variable');
+    gate.resource.bind(gate, '/doc/notvariable', {}).should.throwError(/basename/);
+  });
+
+  it('throw error when no controller', function() {
+    gate.resource.bind(gate, '/doc/:id').should.throwError(/\/doc\/\:id/);
   });
 });

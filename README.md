@@ -46,10 +46,12 @@ app.use(gate.middleware());
 'put /path/:var'
 ```
 
-**handler** is a generator, which handles request, the parameter of the function is parsed by koa-gate
+**handler** is a generator, which handles request, the parameter of the function is parsed by koa-gate, the return value is the response.body
 
 ```javascript
-function *(param1, param2)
+function *(param1, param2) {
+  return 'request ok';
+}
 ```
 
 ### gate.resource(path, controller);
@@ -99,14 +101,17 @@ here is some legal example
 #### function
 
 ```javascript
-function(data, field)
+function(data, field) {
+  if(data[field] > 60) return 'passed';
+  return 'fail';
+}
 ```
 
 `data` indicates all data passed by request
 
 `field` indicates the field to check
 
-`return` function can return a value and a promise
+`return` function can return a value or a promise
 
 #### object
 

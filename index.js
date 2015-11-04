@@ -1,3 +1,3 @@
 'use strict'
-var Gate = require('./lib/gate');
-module.exports = Gate;
+var chkr = require('./lib/chkr');
+module.exports = chkr;

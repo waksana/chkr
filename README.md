@@ -1,85 +1,39 @@
-koa-gate
+chkr
 ===
 
-[![npm](https://img.shields.io/npm/v/koa-gate.svg)](https://www.npmjs.com/package/koa-gate) [![Build Status](https://travis-ci.org/waksana/koa-gate.svg)](https://travis-ci.org/waksana/koa-gate) [![Coverage Status](https://coveralls.io/repos/waksana/koa-gate/badge.svg?branch=master)](https://coveralls.io/r/waksana/koa-gate?branch=master)
+[![npm](https://img.shields.io/npm/v/chkr.svg)](https://www.npmjs.com/package/chkr) [![Build Status](https://travis-ci.org/waksana/chkr.svg)](https://travis-ci.org/waksana/chkr) [![Coverage Status](https://coveralls.io/repos/waksana/chkr/badge.svg?branch=master)](https://coveralls.io/r/waksana/chkr?branch=master)
 
-koa-gate is a middleware for koa
+chkr is a field checker
 
 ## Installation
 
 ```sh
-npm install koa-gate
+npm install chkr
 ```
 
 ## Example
 
 ```javascript
-var Gate = require('koa-gate');
-var gate = new Gate();
+var chkr = require('./');
 
-gate.check('anything', 'string?');
-gate.check('data', 'string!');
-gate.check('value', 'number:3');
-gate.check('obj', {
-  somefield: 'string?',
-  otherfield: function(data) {},
-  field3: {
-    field4: 'number?'
-  }
+const checker = chkr({
+  string: 'string!',
+  number: 'number:5',
+  bool: 'boolean!',
+  date: 'date?'
 });
 
-gate.route('get /path/to/api/:data', function *(data, anything, value, obj) {
-  return 'response ok';
+//checker can be partially applied
+checker(['string', 'number', 'bool'], aObject).then(res => {
+  //res is an object contain only the fields listed above
 });
-
-app.use(gate.middleware());
 ```
 
 ## API
 
-### gate.route(action, handler);
+### chkr(rule);
 
-**action** is a string with an http method and a path
-
-```javascript
-'get /path'
-'put /path/:var'
-```
-
-**handler** is a generator, which handles request, the parameter of the function is parsed by koa-gate, the return value is the response.body
-
-```javascript
-function *(param1, param2) {
-  return 'request ok';
-}
-```
-
-### gate.resource(path, controller);
-
-a shortcut of routing an resource which has `create`, `update`, `remove`, `read` and `query` methods. `query` and `create` is routed to collection, other methods is routed to the specified document.
-
-```javascript
-var controller = {
-  create: function *() {},
-  update: function *(documentId) {},
-  query: function* () {},
-  read: function*(documentId) {}
-};
-gate.resource('/document/:documentId', controller);
-
-//is the same as
-
-gate.route('post /document', controller.create);
-gate.route('put /document/:documentId', controller.update);
-gate.route('get /document', controller.update);
-gate.route('get /document/:documentId', controller.read);
-
-//remove is not available because there is no remove function in controller
-```
-
-### gate.check(field, rule);
-
-koa-gate checks the params of the handler using rule. rule can be:
+chkr checks object fields using rule object. rule can be:
 
 #### string
 

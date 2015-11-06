@@ -14,24 +14,33 @@ npm install chkr
 ## Example
 
 ```javascript
-var chkr = require('./');
+var chkr = require('chkr');
 
-const checker = chkr({
+const rule = {
   string: 'string!',
   number: 'number:5',
   bool: 'boolean!',
   date: 'date?'
-});
+};
 
-//checker can be partially applied
-checker(['string', 'number', 'bool'], aObject).then(res => {
+const fileds = ['string', 'number', 'bool'];
+
+const data = {
+  string: 'hello world',
+  number: '123',
+  bool: 'true'
+};
+
+chkr(urle, fields, data).then(res => {
   //res is an object contain only the fields listed above
 });
 ```
 
 ## API
 
-### chkr(rule);
+### chkr(rule, fields, data);
+
+also `chkr(rule)(fields)(data)`, `chkr(rule, fields)(data)` and `chkr(rule)(fields, data)`
 
 chkr checks object fields using rule object. rule can be:
 

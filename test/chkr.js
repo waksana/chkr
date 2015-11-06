@@ -2,6 +2,23 @@ var chkr = require('../lib/chkr');
 
 describe('assemble command', () => {
 
+  it('likes a normal fn', done => {
+    var rawData = {key: 'va1ue', key2: 'asdf'};
+    var checker = {
+      fun: () => 'funval',
+      key: 'string!',
+      keyDefault: 'string:ok'
+    };
+    chkr(checker, ['fun', 'key', 'keyDefault'], rawData).then(result => {
+      result.should.eql({
+        fun: 'funval',
+        key: 'va1ue',
+        keyDefault: 'ok'
+      });
+      done();
+    });
+  });
+
   it('register a function returns a promise, and apply default', done => {
     var rawData = {key: 'va1ue', key2: 'asdf'};
     const filter = chkr({

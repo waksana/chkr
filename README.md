@@ -40,13 +40,13 @@ chkr(urle, data).then(res => {
 
 also `chkr(rule)(data)`
 
-chkr checks object fields using rule object. rule can be:
+chkr checks object fields using rule object. rule is a type string
 
-#### string
+### type string
 
 a type string consists 3 parts
 
-1. **type** should be one of `string`, `number`, `date` and `boolean`
+1. **type** is a map function map and check value. you can add types, there is some type you can use right now `string`, `number`, `date` and `boolean`
 2. **optional** `!` indicate the field is required, `?` indicate the field is optional, and `:` indicate the field is required and has a default value
 3. default value
 
@@ -58,6 +58,10 @@ here is some legal example
 'date:2015/07/07'
 'boolean:false'
 ```
+
+### chkr.type('type', fn)
+
+you can extend type system by using this method
 
 ## Test
 

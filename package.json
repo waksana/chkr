@@ -4,7 +4,7 @@
   "description": "chkr helps you to build api quickly",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --reporter spec test/index",
+    "test": "mocha --reporter spec test",
     "test-cov": "istanbul cover ./node_modules/.bin/_mocha",
     "coveralls": "npm run test-cov && cat ./coverage/lcov.info | coveralls"
   },

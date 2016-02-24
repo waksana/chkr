@@ -1,4 +1,0 @@
-
-require('should');
-
-require('./chkr');

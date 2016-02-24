@@ -1,9 +1,11 @@
-var chkr = require('..');
+require('should');
+
+var chkr = require('.');
 
 describe('add type error', () => {
   it('throw an error when type not ok', () => {
     chkr.type.bind(this, 'not a type').should.throw(/wrong param/);
-    chkr.type.bind(this, {'aa-ff': () => 1}).should.throw(/type name/);
+    chkr.type.bind(this, {'aa-ff': 'value'}).should.throw(/type name/);
     chkr.type.bind(this, {name: 'waksana'}).should.throw(/should be a fn/);
   });
 });
@@ -59,42 +61,25 @@ describe('assemble command', () => {
     Promise.all([check1, check2]).then(() => done()).catch(done);
   });
 
-  /*
-  it('register a collection of all type', function(done) {
-    const rawData = {typeField: '1234'};
-    const filter = chkr({
-      ever: {
-        funField: function(data, field) {
-          data.should.be.equal(rawData);
-          field.should.equal('funField');
-          return 'rawFunValue';
-        },
-        typeField: 'number!',
-        objField: {
-          typeField2: 'boolean:true',
-          funField2: function(data, field) {
-            data.should.be.equal(rawData);
-            field.should.equal('funField2');
-            return Promise.resolve('funValue2');
-          }
-        }
-      }
-    });
-    filter(['ever'], rawData).then(result => {
-      result.should.eql({
-        ever: {
-          funField: 'rawFunValue',
-          typeField: 1234,
-          objField: {
-            typeField2: true,
-            funField2: 'funValue2'
-          }
-        }
-      });
+  it('get a boolean type', done => {
+    const checker = chkr({type: 'boolean!'});
+    checker({type: 'true'}).then(res => {
+      res.should.eql({type: true});
+    }).then(function() {
+      return checker({type: 'false'});
+    }).then(res => {
+      res.should.eql({type: false});
       done();
-    });
+    }).catch(done);
   });
-  */
+
+  it('transfer to date', done => {
+    chkr({type: 'date!'}, {type: '2016-02-24'}).then(res => {
+      res.type.getTime().should.equal(new Date('2016-02-24').getTime());
+      done();
+    }).catch(done);
+  });
+
 });
 
 describe('assemble error', function() {
@@ -117,9 +102,11 @@ describe('assemble error', function() {
     chkr.bind(this, {n: 'number:NaN'}).should.throwError('not a number');
     chkr.bind(this, 'number:1').should.throw(/not null object/);
     chkr.bind(this, {n: 'notatype!'}).should.throw();
+    chkr.bind(this, {n: 'boolean!'}, {n: 'notboolean'}).should.throw();
     chkr.bind(this, {n: 'string?no:'}).should.throw();
-    chkr.bind(this, {n: 'boolean!:default'}).should.throw();
+    chkr.bind(this, {n: 'boolean:default'}).should.throw();
     chkr.bind(this, {n: 'boolean?:default'}).should.throw();
     chkr.bind(this, {n: 'number?:bbb'}).should.throw()
+    chkr.bind(this, {n: 'date!'}, {n: 'nnn'}).should.throw('not a datetype')
   });
 });

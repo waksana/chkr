@@ -86,7 +86,7 @@ describe('assemble error', function() {
 
   it('thorw an error in type check', function() {
     const filter = chkr({type: 'number!'});
-    filter.bind(this, {}).should.throwError(/required/);
+    filter({}).catch(e => /required/.test(e.message).should.be.ok);
   });
   it('throw an error in fun', function() {
     chkr.type('err', () => {throw new Error('test error')});

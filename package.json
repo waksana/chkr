@@ -2,7 +2,7 @@
   "name": "chkr",
   "version": "3.0.1",
   "description": "chkr helps you to build api quickly",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "mocha --reporter spec test",
     "test-cov": "istanbul cover ./node_modules/.bin/_mocha",
@@ -26,8 +26,5 @@
     "istanbul": "^0.3.17",
     "mocha": "^2.2.5",
     "should": "^7.0.1"
-  },
-  "dependencies": {
-    "gali": "0.0.2"
   }
 }

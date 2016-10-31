@@ -1,6 +1,6 @@
 {
   "name": "chkr",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "chkr helps you to build api quickly",
   "main": "lib/index.js",
   "scripts": {

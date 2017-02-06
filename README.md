@@ -19,6 +19,12 @@ t.Num('1') //===> 1
 t.Num('a') //throws error
 c.Optional(t.Num)() //===> undefined
 c.Arr(t.Num)([1,2,3]) //===> [1,2,3]
+c.Obj({
+  user: t.Str,
+  age: t.Num,
+  isAdmin: t.Bool,
+  pages: c.Arr(t.Str)
+})
 ```
 
 ## API

@@ -4,9 +4,8 @@
   "description": "chkr helps you to build api quickly",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --reporter spec test",
-    "test-cov": "istanbul cover ./node_modules/.bin/_mocha",
-    "coveralls": "npm run test-cov && cat ./coverage/lcov.info | coveralls"
+    "test": "nyc --reporter=html --reporter=text mocha",
+    "coveralls": "nyc report --reporter=text-lcov | coveralls"
   },
   "repository": {
     "type": "git",
@@ -23,8 +22,8 @@
   "homepage": "https://github.com/waksana/chkr",
   "devDependencies": {
     "coveralls": "^3.0.2",
-    "istanbul": "^0.4.5",
     "mocha": "^5.2.0",
+    "nyc": "^12.0.2",
     "should": "^13.2.3"
   }
 }

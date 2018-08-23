@@ -13,47 +13,61 @@ npm install chkr
 ## Example
 
 ```javascript
-const {t, c} = require('chkr');
-t.Num(1) //==> 1
-t.Num('1') //===> 1
-t.Num('a') //throws error
-c.Optional(t.Num)() //===> undefined
-c.Arr(t.Num)([1,2,3]) //===> [1,2,3]
-c.Obj({
-  user: t.Str,
-  age: t.Num,
-  isAdmin: t.Bool,
-  pages: c.Arr(t.Str)
-})
+const {Num, Optional, Arr, Str, Bool} = require('chkr');
+Num.check(1) //==> 1
+Num.check('1') //===> 1
+Num.check('a') //throws error
+Optional(Num).check() //===> undefined
+Arr(Num).check([1,2,3]) //===> [1,2,3]
+console.log(Obj({
+  user: Str,
+  age: Num,
+  isAdmin: Bool,
+  pages: Arr(Str)
+}).sample())
 ```
 
 ## API
 
-### Type(t)
+### Type
 
-t has some basic type. every type is a fuction to judge/transform the input value and returns the transformed value or throw an error if the input value is not the required type.
+a type is a js object with `check` and `sample` as it's method. it's `inspect` symbol is customized to show the infomation of itself.
 
-- `t.Null` null or undefined
-- `t.Any` any thing but not `t.Null`
-- `t.Num` input a number or a string consist of only digits will output a exact number
-- `t.Str` any thing will transfer to string //not good?
-- `t.Bool` true or 'true' to true, false or 'false' to false, number, object... throws
-- `t.Date` Date or any thing can be transfered into Date by new Date
-- `t.Json` Object or Array or a json string which can be parse into an Object or Array
-- `t.Obj` an object or a json string
-- `t.Arr` an array or a json string
-- `t.Fn` function
+#### `.check`
 
-### Combine(c)
+the `check` method checks and parse the input value and returns then transformed value or throw an error if the input value is not the required type
 
-c is some thing you give them some value or type, they will generate a new type for you
+#### `.sample`
 
-- `c.Val` accept a value then generate a type has only one value
-- `c.Or` accept some types returns a type which can be all the given types
-- `c.Optional` make type optional
-- `c.Map` accept two types key type and value type to generate a key value paire object type
-- `c.Obj` accept an object indicate an object has some key with some type
-- `c.Arr` Array of a type
+`sample` method returns a sample data of a type
+
+### Concrete Type
+
+- `Id` any type
+- `Null` null or undefined
+- `Any` any thing but not `Null`
+- `Num` input a number or a string consist of only digits will output a exact number
+- `Str` any thing will transfer to string
+- `Bool` true or 'true' to true, false or 'false' to false, number, object... throws
+- `Time` Date or any thing can be transfered into Date by `new Date`
+
+### Type Combinator
+
+- `Const` a type with only one value (1)
+- `Or` accept some types returns a type which can be all the given types (+)
+- `Obj` accept an object indicate an object has some key with some type (\*)
+- `Optional` make type optional (Null + Type)
+- `Kv` accept a type called value type to generate a key value paire object type
+- `Arr` Array of a type
+
+### Recursive Type Def
+
+recursive type is supported using a fn `withSelf`. you can use this to define an `List`
+
+```javascript
+const List = withSelf(Self => ValueType => Or(Const(Empty), Obj({head: ValueType, tail: Self})))
+const NumList = List(Num)
+```
 
 ## Test
 

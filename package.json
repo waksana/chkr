@@ -2,7 +2,7 @@
   "name": "chkr",
   "version": "5.0.1",
   "description": "chkr helps you to build api quickly",
-  "main": "lib/index.js",
+  "main": "index.js",
   "scripts": {
     "test": "mocha --reporter spec test",
     "test-cov": "istanbul cover ./node_modules/.bin/_mocha",
@@ -22,9 +22,9 @@
   },
   "homepage": "https://github.com/waksana/chkr",
   "devDependencies": {
-    "coveralls": "^2.11.2",
-    "istanbul": "^0.3.17",
-    "mocha": "^2.2.5",
-    "should": "^7.0.1"
+    "coveralls": "^3.0.2",
+    "istanbul": "^0.4.5",
+    "mocha": "^5.2.0",
+    "should": "^13.2.3"
   }
 }

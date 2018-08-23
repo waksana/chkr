@@ -21,30 +21,35 @@ const judge = (fn, message) => v => {
 const Id = {
   check: v => v,
   sample: () => 42,
+  symbol: Symbol('Id'),
   [inspect]: special`Id`,
 }
 
 const Null = {
   check: judge(util.isNullOrUndefined, 'Is Not Null'),
   sample: () => random([null, undefined]),
+  symbol: Symbol('Null'),
   [inspect]: special`Null`,
 }
 
 const Any = {
   check: judge(v => !util.isNullOrUndefined(v), 'Is Null'),
   sample: () => random([Str, Num, Bool, Time]).sample(),
+  symbol: Symbol('Any'),
   [inspect]: special`Any`,
 }
 
 const Num = {
   check: cl(Any, judge(v => !isNaN(v) && v !== '', 'Is Not a Number'), Number),
   sample: () => random([0, 1, 2, 4, 7, 8, 9, 11.1]),
+  symbol: Symbol('Num'),
   [inspect]: special`Num`,
 }
 
 const Str = {
   check: cl(Any, String),
   sample: () => random(['sample string', 'hello world', 'random string']),
+  symbol: Symbol('Str'),
   [inspect]: special`Str`,
 }
 
@@ -55,12 +60,14 @@ const Bool = {
     throw new Error('Is Not a Bool')
   }),
   sample: () => random([true, false]),
+  symbol: Symbol('Bool'),
   [inspect]: special`Bool`,
 }
 
 const Time = {
   check: cl(Any, (...p) => new Date(...p), judge(v => v.toString() !== 'Invalid Date', 'Is Not a Time')),
   sample: () => new Date,
+  symbol: Symbol('Time'),
   [inspect]: special`Time`,
 }
 
@@ -79,6 +86,7 @@ const Void = ({
 const Const = v => ({
   check: judge(r => r === v, `Is Not Eq To ${v.toString()}`),
   sample: () => v,
+  symbol: Symbol('Const'),
   [inspect]: (depth, opts) => opts.stylize(`Const(${util.inspect(v, {depth: depth - 1})})`, 'special'),
 })
 
@@ -105,6 +113,7 @@ const Or = (...Types) => ({
       return Types[i].sample()
     return random(Types).sample()
   },
+  symbol: Symbol('Or'),
   [inspect]: (depth, opts) => {
     let str = `Or(\n${indent(Types.map(Type => util.inspect(Type, {depth: depth - 1})).join(',\n'))}\n)`
     return opts.stylize(str, 'special')
@@ -128,6 +137,7 @@ const Obj = TypeMap => ({
     ret[key] = TypeMap[key].sample()
     return ret
   }, {}),
+  symbol: Symbol('Obj'),
   [inspect]: (depth, opt) => {
     const fields = Object.keys(TypeMap)
       .map(key => `key: ${util.inspect(TypeMap[key], {depth: depth - 1})}`)
@@ -141,6 +151,7 @@ const Obj = TypeMap => ({
  */
 
 const Optional = Type => Object.assign(Or(Null, Type), {
+  symbol: Symbol('Optional'),
   [inspect]: (depth, opts) => opts.stylize(`Optional(${util.inspect(Type, {depth: depth - 1})})`, 'specal'),
 })
 
@@ -159,6 +170,7 @@ const Kv = ValueType => ({
     return ret
   }, {})),
   sample: () => ({key: ValueType.sample()}),
+  symbol: Symbol('Kv'),
   [inspect]: (depth, opts) => opts.stylize(`Kv(${util.inspect(ValueType, {depth: depth - 1})})`, 'special'),
 })
 
@@ -172,6 +184,7 @@ const Arr = Type => ({
     }
   })),
   sample: () => [Type.sample()],
+  symbol: Symbol('Arr'),
   [inspect]: (depth, opts) => opts.stylize(`Arr(${util.inspect(Type, {depth: depth - 1})})`, 'special')
 })
 

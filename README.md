@@ -15,7 +15,7 @@ npm install chkr
 ```javascript
 const {Num, Optional, Arr, Str, Bool} = require('chkr');
 Num.check(1) //==> 1
-Num.check('1') //===> 1
+Num.check('1') //throws error
 Num.check('a') //throws error
 Optional(Num).check() //===> undefined
 Arr(Num).check([1,2,3]) //===> [1,2,3]

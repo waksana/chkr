@@ -6,6 +6,16 @@ const indent = str => '  ' + str.replace(/\n/g, '\n  ')
 const random = values => values[Math.floor(Math.random() * values.length)]
 const cl = (...fn) => v => fn.reduce((r, f) => f(r), v)
 
+const parse = v => {
+  if(!util.isString(v)) return v
+  try {
+    return JSON.parse(v)
+  }
+  catch(e) {
+    return v
+  }
+}
+
 const special = str => (depth, opts) => opts.stylize(str[0], 'special')
 
 const judge = (fn, message) => v => {
@@ -37,7 +47,7 @@ const Any = {
 }
 
 const Num = {
-  check: judge(v => util.isNumber(v) && !isNaN(v), 'Is Not a Number'),
+  check: cl(parse, judge(v => util.isNumber(v) && !isNaN(v), 'Is Not a Num')),
   sample: () => random([0, 1, 2, 4, 7, 8, 9, 11.1]),
   [inspect]: special`Num`,
 }
@@ -49,13 +59,13 @@ const Str = {
 }
 
 const Bool = {
-  check: judge(util.isBoolean, 'Is Not a Bool'),
+  check: cl(parse, judge(util.isBoolean, 'Is Not a Bool')),
   sample: () => random([true, false]),
   [inspect]: special`Bool`,
 }
 
 const Time = {
-  check: judge(v => util.isDate(v) && v.toString() !== 'Invalid Date', 'Is Not a Time'),
+  check: cl(v => new Date(v), judge(v => v.toString() !== 'Invalid Date', 'Is Not a Time')),
   sample: () => new Date,
   [inspect]: special`Time`,
 }
@@ -102,7 +112,7 @@ const Or = (...Types) => ({
 
 //product type
 const Obj = TypeMap => ({
-  check: cl(judge(util.isObject, 'Is Not an Object'), v => Object.keys(TypeMap).reduce((ret, key) => {
+  check: cl(parse, judge(util.isObject, 'Is Not an Object'), v => Object.keys(TypeMap).reduce((ret, key) => {
     try {
       let result = TypeMap[key].check(v[key])
       if(!util.isNullOrUndefined(result))
@@ -138,7 +148,7 @@ const Optional = Type => Object.assign(Or(Null, Type), {
  */
 
 const Kv = ValueType => ({
-  check: cl(judge(util.isObject, 'Is Not an Object'), v => Object.keys(v).reduce((ret, key) => {
+  check: cl(parse, judge(util.isObject, 'Is Not an Object'), v => Object.keys(v).reduce((ret, key) => {
     try {
       ret[key] = ValueType.check(v[key])
     }
@@ -152,7 +162,7 @@ const Kv = ValueType => ({
 })
 
 const Arr = Type => ({
-  check: cl(judge(util.isArray, 'Is Not an Arr'), v => v.map((item, i) => {
+  check: cl(parse, judge(util.isArray, 'Is Not an Arr'), v => v.map((item, i) => {
     try {
       return Type.check(item)
     }
@@ -165,7 +175,7 @@ const Arr = Type => ({
 })
 
 const ArrTuple = (...Types) => ({
-  check: cl(judge(util.isArray, 'Is Not an Arr'), v => Types.map((Type, i) => {
+  check: cl(parse, judge(util.isArray, 'Is Not an Arr'), v => Types.map((Type, i) => {
     try {
       return Type.check(v[i])
     }

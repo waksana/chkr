@@ -53,7 +53,7 @@ describe('Chkr', () => {
       [[], throws],
       ['', throws],
       [true, throws],
-      ['42', throws],
+      ['42', 42],
       [42, 42],
     ]))
 
@@ -70,8 +70,8 @@ describe('Chkr', () => {
     it('Bool', testType(Bool, [
       [true, true],
       [false, false],
-      ['false', throws],
-      ['true', throws],
+      ['false', false],
+      ['true', true],
       [0, throws],
       [1, throws],
       ['0', throws],
@@ -82,7 +82,7 @@ describe('Chkr', () => {
     it('Time', testType(Time, [
       [new Date('2018-08-18'), new Date('2018-08-18')],
       [new Date('test'), throws],
-      ['2018-08-24T06:39:04.908Z', throws],
+      ['2018-08-24T06:39:04.908Z', new Date('2018-08-24T06:39:04.908Z')],
     ]))
   })
 
@@ -105,7 +105,8 @@ describe('Chkr', () => {
       [{n: 2, s: 'wak'}, {n: 2, s: 'wak'}],
       [{n: 2}, {n: 2}],
       [{n: 2, s: 'wak', extra: 'extra'}, {n: 2, s: 'wak'}],
-      [{n: '2', s: 'wak'}, throws],
+      [{n: '2', s: 'wak'}, {n: 2, s: 'wak'}],
+      [{n: 'a', s: 'wak'}, throws],
       [{n: 2, s: 42}, throws],
     ]))
 
@@ -118,7 +119,8 @@ describe('Chkr', () => {
 
     it('Kv', testType(Kv(Num), [
       [{a: 1, b: 2}, {a: 1, b: 2}],
-      [{a: 1, b: '2'}, throws],
+      [{a: 1, b: '2'}, {a: 1, b: 2}],
+      [{a: 1, b: 'a'}, throws],
       [{}, {}],
     ]))
 
@@ -126,7 +128,8 @@ describe('Chkr', () => {
       [[], []],
       [{}, throws],
       [[1,2,3], [1,2,3]],
-      [[1,2,'3'], throws],
+      [[1,2,'3'], [1,2,3]],
+      [[1,2,'a'], throws],
     ]))
 
     it('ArrTuple', testType(ArrTuple(Num, Str), [

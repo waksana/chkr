@@ -59,6 +59,7 @@ the `check` method checks and parse the input value and returns then transformed
 - `Optional` make type optional (Null + Type)
 - `Kv` accept a type called value type to generate a key value paire object type
 - `Arr` Array of a type
+- `Func` a Function with input and output signature
 
 ### Recursive Type Def
 
@@ -67,6 +68,16 @@ recursive type is supported using a fn `withSelf`. you can use this to define an
 ```javascript
 const List = withSelf(Self => ValueType => Or(Const(Empty), Obj({head: ValueType, tail: Self})))
 const NumList = List(Num)
+```
+
+### Constructor
+
+`func` is a function with signature, when using func you can check function with `Func`
+
+```javascript
+let fn = func(Num, Str, () => 'res')
+let NumToStr = Func(Num, Str)
+NumToStr.check(fn) //checked!
 ```
 
 ## Test

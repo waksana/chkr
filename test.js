@@ -3,7 +3,7 @@
 const assert = require('assert')
 const util = require('util')
 
-const {Id, Arr, Null, Any, ArrTuple, Or, Const, withSelf, Kv, Time, Bool, Num, Str, Obj, Optional} = require('.')
+const {Func, func, Id, Arr, Null, Any, ArrTuple, Or, Const, withSelf, Kv, Time, Bool, Num, Str, Obj, Optional} = require('.')
 
 const throws = Symbol()
 
@@ -136,12 +136,32 @@ describe('Chkr', () => {
       [[42, 'waksana'], [42, 'waksana']],
       [['wak', 42], throws],
     ]))
+
+    it('Func', () => {
+      let fn = func(Num, Str, () => 'test')
+      testType(Func(Num, Str), [
+        [fn, fn],
+        [() => 'test', throws],
+        [func(Str, Num, () => 42), throws],
+      ])()
+      let fn2 = func(Obj({a: Num, b: Str}), Optional(Str), () => undefined)
+      let fn3 = func(Obj({a: Num, b: Str}), Str, () => undefined)
+      testType(Func(Obj({a: Num, b: Str}), Optional(Str)), [
+        [fn2, fn2],
+        [fn, throws],
+        [fn3, throws],
+      ])()
+
+      let objType = Obj({a: Num, b: Str})
+      let outputSample = Func(Num, objType).sample()(1)
+      assert.deepStrictEqual(objType.check(outputSample), outputSample)
+    })
   })
 
   describe('Recursive Type Def', () => {
+    const Empty = Symbol('Empty')
+    const List = withSelf(Self => ValueType => Or(Const(Empty), Obj({head: ValueType, tail: Self})))
     it('Defines a recursive type', () => {
-      const Empty = Symbol('Empty')
-      const List = withSelf(Self => ValueType => Or(Const(Empty), Obj({head: ValueType, tail: Self})))
       testType(List(Num), [
         [{
           head: 42,
@@ -159,6 +179,55 @@ describe('Chkr', () => {
         [Empty, Empty],
         [{head: 42}, throws]
       ])()
+    })
+    it('stops at depth 2', () => {
+      let length = list => list === Empty ? 0 : 1 + length(list.tail)
+      for(let i = 0; i < 10; i++) {
+        assert(length(List(Num).sample()) < 2)
+      }
+    })
+  })
+
+  describe('Constructor', () => {
+
+    describe('func', () => {
+
+
+      const rawFn = a => a.toString()
+
+      const numberToString = func(Num, Str, rawFn)
+
+      it('runs', () => {
+        assert.deepStrictEqual(numberToString(12), '12')
+      })
+
+      it('has correct signature', () => {
+        assert.deepStrictEqual(util.inspect(numberToString.inputSignature), 'Num')
+        assert.deepStrictEqual(util.inspect(numberToString.outputSignature), 'Str')
+        assert.deepStrictEqual(numberToString.signature, 'Num -> Str')
+      })
+
+      it('shows signature in inspect', () => {
+        assert.deepStrictEqual(util.inspect(numberToString), 'Func :: Num -> Str')
+        assert.deepStrictEqual(numberToString.toString(), rawFn.toString())
+      })
+
+      it('throws when input not correct', () => {
+        assert.throws(() => {
+          numberToString('abc')
+        })
+      })
+
+      it('correctly handles async function', async () => {
+        let utsAsync = func(Num, Str, async a => a.toString())
+        let res = await utsAsync(12)
+
+        assert.deepStrictEqual(res, '12')
+
+        let utbAsync = func(Num, Bool, async a => a.toString())
+
+        assert.rejects(utbAsync('12'))
+      })
     })
   })
 })

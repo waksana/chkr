@@ -1,6 +1,7 @@
 const util = require('util')
 
 const inspect = util.inspect.custom
+const chkr = Symbol('chkr')
 
 const indent = str => '  ' + str.replace(/\n/g, '\n  ')
 const random = values => values[Math.floor(Math.random() * values.length)]
@@ -23,51 +24,102 @@ const judge = (fn, message) => v => {
   throw new Error(message)
 }
 
+const objMap = fn => obj => Object.keys(obj).reduce((ret, key) => {
+  let res = fn(obj[key])
+  if(!util.isNullOrUndefined(res))
+    ret[key] = res
+  return ret
+}, {})
+
+const objZipWith = fn => a => b =>
+  Object.keys(a).reduce((ret, key) => {
+    try {
+      let res = fn(a[key], b[key])
+      if(!util.isNullOrUndefined(res))
+        ret[key] = res
+      return ret
+    }
+    catch(e) {
+      throw new Error(`Field '${key}' ${e.message}`)
+    }
+  }, {})
+
+const func = (inputSignature, outputSignature, fn) => {
+  const wrappedFn = (input, ...params) => {
+    const res = fn(inputSignature.check(input), ...params)
+    if(res instanceof Promise)
+      return res.then(outputSignature.check)
+    else
+      return outputSignature.check(res)
+  }
+  wrappedFn.inputSignature = inputSignature
+  wrappedFn.outputSignature = outputSignature
+  wrappedFn.signature = `${util.inspect(inputSignature)} -> ${util.inspect(outputSignature)}`
+  wrappedFn[util.inspect.custom] = (depth, opts) =>
+    opts.stylize(`Func :: ${wrappedFn.signature}`, 'special')
+  wrappedFn.toString = () => fn.toString()
+  return wrappedFn
+}
+
 /*
  * concrete type
  *   will auto parse string
  */
 
 const Id = {
+  id: Symbol('Id'),
   check: v => v,
   sample: () => 42,
   [inspect]: special`Id`,
+  [chkr]: true,
 }
 
 const Null = {
+  id: Symbol('Null'),
   check: judge(util.isNullOrUndefined, 'Is Not Null'),
   sample: () => random([null, undefined]),
   [inspect]: special`Null`,
+  [chkr]: true,
 }
 
 const Any = {
+  id: Symbol('Any'),
   check: judge(v => !util.isNullOrUndefined(v), 'Is Null'),
   sample: () => random([Str, Num, Bool, Time]).sample(),
   [inspect]: special`Any`,
+  [chkr]: true,
 }
 
 const Num = {
+  id: Symbol('Num'),
   check: cl(parse, judge(v => util.isNumber(v) && !isNaN(v), 'Is Not a Num')),
   sample: () => random([0, 1, 2, 4, 7, 8, 9, 11.1]),
   [inspect]: special`Num`,
+  [chkr]: true,
 }
 
 const Str = {
+  id: Symbol('Str'),
   check: judge(util.isString, 'Is Not a Str'),
   sample: () => random(['sample string', 'hello world', 'random string']),
   [inspect]: special`Str`,
+  [chkr]: true,
 }
 
 const Bool = {
+  id: Symbol('Bool'),
   check: cl(parse, judge(util.isBoolean, 'Is Not a Bool')),
   sample: () => random([true, false]),
   [inspect]: special`Bool`,
+  [chkr]: true,
 }
 
 const Time = {
+  id: Symbol('Time'),
   check: cl(v => new Date(v), judge(v => v.toString() !== 'Invalid Date', 'Is Not a Time')),
   sample: () => new Date,
   [inspect]: special`Time`,
+  [chkr]: true,
 }
 
 /*
@@ -76,13 +128,18 @@ const Time = {
 
 //1 type
 const Const = v => ({
+  id: Symbol(String(v)),
   check: judge(r => r === v, `Is Not Eq To ${v.toString()}`),
   sample: () => v,
   [inspect]: (depth, opts) => opts.stylize(`Const(${util.inspect(v, {depth: depth - 1})})`, 'special'),
+  [chkr]: true,
 })
 
+
 //Sum Type
+const OrSymbol = Symbol('Or')
 const Or = (...Types) => ({
+  id: [OrSymbol, Types.map(type => type.id)],
   check: v => {
     let ret
     let errors = []
@@ -107,32 +164,28 @@ const Or = (...Types) => ({
   [inspect]: (depth, opts) => {
     let str = `Or(\n${indent(Types.map(Type => util.inspect(Type, {depth: depth - 1})).join(',\n'))}\n)`
     return opts.stylize(str, 'special')
-  }
+  },
+  [chkr]: true,
 })
 
 //product type
+const ObjSymbol = Symbol('Obj')
+
+const objMapId = objMap(Type => Type.id)
+const objZipWithCheck = objZipWith((Type, value) => Type.check(value))
+const objMapSample = objMap(Type => Type.sample())
+
 const Obj = TypeMap => ({
-  check: cl(parse, judge(util.isObject, 'Is Not an Object'), v => Object.keys(TypeMap).reduce((ret, key) => {
-    try {
-      let result = TypeMap[key].check(v[key])
-      if(!util.isNullOrUndefined(result))
-        ret[key] = result
-    }
-    catch(e) {
-      throw new Error(`Field '${key}' ${e.message}`)
-    }
-    return ret
-  }, {})),
-  sample: () => Object.keys(TypeMap).reduce((ret, key) => {
-    ret[key] = TypeMap[key].sample()
-    return ret
-  }, {}),
+  id: [ObjSymbol, objMapId(TypeMap)],
+  check: cl(parse, judge(util.isObject, 'Is Not an Object'), objZipWithCheck(TypeMap)),
+  sample: () => objMapSample(TypeMap),
   [inspect]: (depth, opt) => {
     const fields = Object.keys(TypeMap)
-      .map(key => `key: ${util.inspect(TypeMap[key], {depth: depth - 1})}`)
+      .map(key => `${key}: ${util.inspect(TypeMap[key], {depth: depth - 1})}`)
       .join(',\n')
     return opt.stylize(`Obj({\n${indent(fields)}\n})`, 'special')
-  }
+  },
+  [chkr]: true,
 })
 
 /*
@@ -147,7 +200,9 @@ const Optional = Type => Object.assign(Or(Null, Type), {
  * native higher order types
  */
 
+const KvSymbol = Symbol('Kv')
 const Kv = ValueType => ({
+  id: [KvSymbol, ValueType.id],
   check: cl(parse, judge(util.isObject, 'Is Not an Object'), v => Object.keys(v).reduce((ret, key) => {
     try {
       ret[key] = ValueType.check(v[key])
@@ -159,9 +214,12 @@ const Kv = ValueType => ({
   }, {})),
   sample: () => ({key: ValueType.sample()}),
   [inspect]: (depth, opts) => opts.stylize(`Kv(${util.inspect(ValueType, {depth: depth - 1})})`, 'special'),
+  [chkr]: true,
 })
 
+const ArrSymbol = Symbol('Kv')
 const Arr = Type => ({
+  id: [ArrSymbol, Type.id],
   check: cl(parse, judge(util.isArray, 'Is Not an Arr'), v => v.map((item, i) => {
     try {
       return Type.check(item)
@@ -171,10 +229,13 @@ const Arr = Type => ({
     }
   })),
   sample: () => [Type.sample()],
-  [inspect]: (depth, opts) => opts.stylize(`Arr(${util.inspect(Type, {depth: depth - 1})})`, 'special')
+  [inspect]: (depth, opts) => opts.stylize(`Arr(${util.inspect(Type, {depth: depth - 1})})`, 'special'),
+  [chkr]: true,
 })
 
+const ArrTupleSymbol = Symbol('ArrTuple')
 const ArrTuple = (...Types) => ({
+  id: [ArrTupleSymbol, Types.map(Type => Type.id)],
   check: cl(parse, judge(util.isArray, 'Is Not an Arr'), v => Types.map((Type, i) => {
     try {
       return Type.check(v[i])
@@ -187,7 +248,26 @@ const ArrTuple = (...Types) => ({
   [inspect]: (depth, opts) => {
     let str = `ArrTuple(\n${indent(Types.map(Type => util.inspect(Type, {depth: depth - 1})).join(',\n'))}\n)`
     return opts.stylize(str, 'special')
-  }
+  },
+  [chkr]: true,
+})
+
+const FunSymbol = Symbol('Func')
+const Func = (InputType, OutputType) => ({
+  id: [FunSymbol, InputType.id, OutputType.id],
+  check: cl(judge(util.isFunction, 'Is Not an Func'), v => {
+    if(!isEqualType(v.inputSignature, InputType))
+      throw new Error(`Input Signature ${util.inspect(v.inputSignature)} is Not Type ${util.inspect(InputType)}`)
+    if(!isEqualType(v.outputSignature, OutputType))
+      throw new Error(`Output Signature ${util.inspect(v.outputSignature)} is Not Type ${util.inspect(OutputType)}`)
+    return v
+  }),
+  sample: () => func(InputType, OutputType, () => OutputType.sample()),
+  [inspect]: (depth, opts) => {
+    let str = `Func(\n${indent([InputType, OutputType].map(Type => util.inspect(Type, {depth: depth - 1})).join(',\n'))}\n)`
+    return opts.stylize(str, 'special')
+  },
+  [chkr]: true,
 })
 
 //generate recur type
@@ -201,4 +281,7 @@ const withSelf = T => (...params) => {
   return newType
 }
 
-module.exports = {Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, withSelf}
+const isType = Type => !!(Type && Type[chkr])
+const isEqualType = (T1, T2) => isType(T1) && isType(T2) && util.isDeepStrictEqual(T1.id, T2.id)
+
+module.exports = {Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType}

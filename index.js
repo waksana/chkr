@@ -200,7 +200,7 @@ const Obj = TypeMap => ({
  */
 
 const Optional = Type => Object.assign(Or(Null, Type), {
-  [inspect]: (depth, opts) => opts.stylize(`Optional(${util.inspect(Type, {depth: depth - 1})})`, 'specal'),
+  [inspect]: (depth, opts) => opts.stylize(`Optional(${util.inspect(Type, {depth: depth - 1})})`, 'special'),
 })
 
 /*

@@ -75,9 +75,13 @@ const NumList = List(Num)
 `func` is a function with signature, when using func you can check function with `Func`
 
 ```javascript
-let fn = func(Num, Str, () => 'res')
+let fn = func([Num, Str], () => 'res')
 let NumToStr = Func(Num, Str)
 NumToStr.check(fn) //checked!
+
+/* high order */
+let sum = func([Num, Num, Num], a => b => a + b)
+sum(1)(2) === 3
 ```
 
 ## Test

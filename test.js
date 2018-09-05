@@ -3,7 +3,7 @@
 const assert = require('assert')
 const util = require('util')
 
-const {Func, func, Id, Arr, Null, Any, ArrTuple, Or, Const, withSelf, Kv, Time, Bool, Num, Str, Obj, Optional} = require('.')
+const {isEqualType, Func, func, Id, Arr, Null, Any, ArrTuple, Or, Const, withSelf, Kv, Time, Bool, Num, Str, Obj, Optional} = require('.')
 
 const throws = Symbol()
 
@@ -138,18 +138,22 @@ describe('Chkr', () => {
     ]))
 
     it('Func', () => {
-      let fn = func(Num, Str, () => 'test')
+      let fn = func([Num, Str], () => 'test')
       testType(Func(Num, Str), [
         [fn, fn],
         [() => 'test', throws],
-        [func(Str, Num, () => 42), throws],
+        [func([Str, Num], () => 42), throws],
       ])()
-      let fn2 = func(Obj({a: Num, b: Str}), Optional(Str), () => undefined)
-      let fn3 = func(Obj({a: Num, b: Str}), Str, () => undefined)
+      let fn2 = func([Obj({a: Num, b: Str}), Optional(Str)], () => undefined)
+      let fn3 = func([Obj({a: Num, b: Str}), Str], () => undefined)
+      let fn4 = func([Num, Num, Num], a => b => a + b)
       testType(Func(Obj({a: Num, b: Str}), Optional(Str)), [
         [fn2, fn2],
         [fn, throws],
         [fn3, throws],
+      ])()
+      testType(Func(Num, Num, Num), [
+        [fn4, fn4],
       ])()
 
       let objType = Obj({a: Num, b: Str})
@@ -195,20 +199,14 @@ describe('Chkr', () => {
 
       const rawFn = a => a.toString()
 
-      const numberToString = func(Num, Str, rawFn)
+      const numberToString = func([Num, Str], rawFn)
 
       it('runs', () => {
         assert.deepStrictEqual(numberToString(12), '12')
       })
 
-      it('has correct signature', () => {
-        assert.deepStrictEqual(util.inspect(numberToString.inputSignature), 'Num')
-        assert.deepStrictEqual(util.inspect(numberToString.outputSignature), 'Str')
-        assert.deepStrictEqual(numberToString.signature, 'Num -> Str')
-      })
-
       it('shows signature in inspect', () => {
-        assert.deepStrictEqual(util.inspect(numberToString), 'Func :: Num -> Str')
+        assert.deepStrictEqual(util.inspect(numberToString), 'func :: Num -> Str')
         assert.deepStrictEqual(numberToString.toString(), rawFn.toString())
       })
 
@@ -219,14 +217,59 @@ describe('Chkr', () => {
       })
 
       it('correctly handles async function', async () => {
-        let utsAsync = func(Num, Str, async a => a.toString())
+        let utsAsync = func([Num, Str], async a => a.toString())
         let res = await utsAsync(12)
 
         assert.deepStrictEqual(res, '12')
 
-        let utbAsync = func(Num, Bool, async a => a.toString())
+        let utbAsync = func([Num, Bool], async a => a.toString())
 
         assert.rejects(utbAsync('12'))
+      })
+
+      it('high order', () => {
+        let fn = func([Num, Num, Num], a => b => a + b)
+        Func(Num, Num, Num).check(fn)
+        Func(Num, Num).check(fn(1))
+        Num.check(fn(1)(2))
+
+        let map = func([Func(Num, Num), Arr(Num), Arr(Num)], fn => arr => arr.map(fn))
+        let add1 = func([Num, Num], a => a + 1)
+
+        Func(Func(Num, Num), Arr(Num), Arr(Num)).check(map)
+        Func(Arr(Num), Arr(Num)).check(map(add1))
+        Arr(Num).check(map(add1)([1,2,3]))
+
+        let sum = func([Num, Num, Num, Num], a => b => a + b)
+        assert.throws(() => Func(Num, Num).check(sum))
+        assert.throws(() => sum(1)(2))
+
+      })
+
+      it('high order manually', () => {
+        let f0 = func([Num, Num, Num], a => b => a + b)
+        let f1 = func([Num, Func(Num, Num)], a => b => a + b)
+        let f2 = func([Num, Num, Num], a => func([Num, Num], b => a + b))
+        let f3 = func([Num, Func(Num, Num)], a => func([Num, Num], b => a + b))
+
+        let F1 = Func(Num, Num, Num)
+        let F2 = Func(Num, Func(Num, Num))
+
+        assert(isEqualType(F1, F2))
+
+        let FTypes = [F1, F2]
+        let values = [f0, f1, f2, f3]
+
+        FTypes.forEach(F => {
+          values.forEach(f => {
+            F.check(f)
+          })
+        })
+
+        values.forEach(v => {
+          assert.equal(v(1)(2), 3)
+        })
+
       })
     })
   })

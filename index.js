@@ -2,6 +2,7 @@ const util = require('util')
 
 const inspect = util.inspect.custom
 const chkr = Symbol('chkr')
+const chkrFn = Symbol('chkrFn')
 
 const indent = str => '  ' + str.replace(/\n/g, '\n  ')
 const random = values => values[Math.floor(Math.random() * values.length)]
@@ -44,19 +45,25 @@ const objZipWith = fn => a => b =>
     }
   }, {})
 
-const func = (inputSignature, outputSignature, fn) => {
+const func = (Types, fn) => {
+  let funcType = Func(...Types)
+  if(fn[chkrFn])
+    return funcType.check(fn)
+
   const wrappedFn = (input, ...params) => {
-    const res = fn(inputSignature.check(input), ...params)
-    if(res instanceof Promise)
-      return res.then(outputSignature.check)
+    const res = fn(funcType[chkr].Input.check(input), ...params)
+    if(util.isFunction(res)) {
+      return func([funcType[chkr].Output], res)
+    }
+    else if(res instanceof Promise)
+      return res.then(funcType[chkr].Output.check)
     else
-      return outputSignature.check(res)
+      return funcType[chkr].Output.check(res)
   }
-  wrappedFn.inputSignature = inputSignature
-  wrappedFn.outputSignature = outputSignature
-  wrappedFn.signature = `${util.inspect(inputSignature)} -> ${util.inspect(outputSignature)}`
-  wrappedFn[util.inspect.custom] = (depth, opts) =>
-    opts.stylize(`Func :: ${wrappedFn.signature}`, 'special')
+
+  wrappedFn[chkrFn] = funcType
+  wrappedFn[inspect] = (depth, opts) =>
+    opts.stylize(`func :: ${util.inspect(wrappedFn[chkrFn])}`, 'special')
   wrappedFn.toString = () => fn.toString()
   return wrappedFn
 }
@@ -253,22 +260,36 @@ const ArrTuple = (...Types) => ({
 })
 
 const FunSymbol = Symbol('Func')
-const Func = (InputType, OutputType) => ({
-  id: [FunSymbol, InputType.id, OutputType.id],
-  check: cl(judge(util.isFunction, 'Is Not an Func'), v => {
-    if(!isEqualType(v.inputSignature, InputType))
-      throw new Error(`Input Signature ${util.inspect(v.inputSignature)} is Not Type ${util.inspect(InputType)}`)
-    if(!isEqualType(v.outputSignature, OutputType))
-      throw new Error(`Output Signature ${util.inspect(v.outputSignature)} is Not Type ${util.inspect(OutputType)}`)
-    return v
-  }),
-  sample: () => func(InputType, OutputType, () => OutputType.sample()),
-  [inspect]: (depth, opts) => {
-    let str = `Func(\n${indent([InputType, OutputType].map(Type => util.inspect(Type, {depth: depth - 1})).join(',\n'))}\n)`
-    return opts.stylize(str, 'special')
-  },
-  [chkr]: true,
-})
+const Func = (...Types) => {
+
+  if(Types.length == 1) {
+    return judge(isType, 'Is Not a ChkrType')(Types[0])
+  }
+
+  let Input, Output
+  if(Types.length == 2) {
+    [Input, Output] = Types
+  }
+  else {
+    let LeftTypes
+    [Input, ...LeftTypes] = Types
+    Output = Func(...LeftTypes)
+  }
+
+  return {
+    id: [FunSymbol, Input.id, Output.id],
+    check: cl(
+      judge(util.isFunction, 'Is Not an Func'),
+      judge(v => isEqualType(v[chkrFn][chkr].Input, Input), `Input Is Not ${util.inspect(Input)}`),
+      judge(v => isEqualType(v[chkrFn][chkr].Output, Output), `Output Is Not ${util.inspect(Output)}`)),
+    sample: () => func([Input, Output], () => Output.sample()),
+    [inspect]: (d, opts) => {
+      let depth = d - 1
+      return opts.stylize(`${util.inspect(Input, {depth})} -> ${util.inspect(Output, {depth})}`, 'special')
+    },
+    [chkr]: {Input, Output},
+  }
+}
 
 //generate recur type
 const withSelf = T => (...params) => {

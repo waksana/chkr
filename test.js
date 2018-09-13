@@ -200,13 +200,18 @@ describe('Chkr', () => {
       const rawFn = a => a.toString()
 
       const numberToString = func([Num, Str], rawFn)
+      const map = func([Func(Num, Num), Arr(Num), Arr(Num)], fn => xs => xs.map(fn))
+      const add1 = func([Num, Num], a => a + 1)
 
       it('runs', () => {
         assert.deepStrictEqual(numberToString(12), '12')
+        assert.deepStrictEqual(map(add1)([1,2,3]), [2,3,4])
       })
 
       it('shows signature in inspect', () => {
         assert.deepStrictEqual(util.inspect(numberToString), 'func :: Num -> Str')
+        assert.deepStrictEqual(util.inspect(map), 'func :: (Num -> Num) -> Arr(Num) -> Arr(Num)')
+        assert.deepStrictEqual(util.inspect(map(add1)), 'func :: Arr(Num) -> Arr(Num)')
         assert.deepStrictEqual(numberToString.toString(), rawFn.toString())
       })
 

@@ -279,13 +279,19 @@ const Func = (...Types) => {
   return {
     id: [FunSymbol, Input.id, Output.id],
     check: cl(
-      judge(util.isFunction, 'Is Not an Func'),
+      judge(util.isFunction, 'Is Not a Func'),
+      judge(v => !!v[chkrFn], 'Is Not a Func'),
       judge(v => isEqualType(v[chkrFn][chkr].Input, Input), `Input Is Not ${util.inspect(Input)}`),
       judge(v => isEqualType(v[chkrFn][chkr].Output, Output), `Output Is Not ${util.inspect(Output)}`)),
     sample: () => func([Input, Output], () => Output.sample()),
     [inspect]: (d, opts) => {
       let depth = d - 1
-      return opts.stylize(`${util.inspect(Input, {depth})} -> ${util.inspect(Output, {depth})}`, 'special')
+      let inputStr
+      if(isFunc(Input))
+        inputStr = `(${util.inspect(Input, {depth})})`
+      else
+        inputStr = util.inspect(Input, {depth})
+      return opts.stylize(`${inputStr} -> ${util.inspect(Output, {depth})}`, 'special')
     },
     [chkr]: {Input, Output},
   }
@@ -302,6 +308,7 @@ const withSelf = T => (...params) => {
   return newType
 }
 
+const isFunc = Type => Type.id && Type.id[0] === FunSymbol
 const isType = Type => !!(Type && Type[chkr])
 const isEqualType = (T1, T2) => isType(T1) && isType(T2) && util.isDeepStrictEqual(T1.id, T2.id)
 

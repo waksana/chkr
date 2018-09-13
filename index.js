@@ -63,7 +63,7 @@ const func = (Types, fn) => {
 
   wrappedFn[chkrFn] = funcType
   wrappedFn[inspect] = (depth, opts) =>
-    opts.stylize(`func :: ${util.inspect(wrappedFn[chkrFn])}`, 'special')
+    opts.stylize(util.inspect(wrappedFn[chkrFn]), 'special')
   wrappedFn.toString = () => fn.toString()
   return wrappedFn
 }

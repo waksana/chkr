@@ -209,9 +209,9 @@ describe('Chkr', () => {
       })
 
       it('shows signature in inspect', () => {
-        assert.deepStrictEqual(util.inspect(numberToString), 'func :: Num -> Str')
-        assert.deepStrictEqual(util.inspect(map), 'func :: (Num -> Num) -> Arr(Num) -> Arr(Num)')
-        assert.deepStrictEqual(util.inspect(map(add1)), 'func :: Arr(Num) -> Arr(Num)')
+        assert.deepStrictEqual(util.inspect(numberToString), 'Num -> Str')
+        assert.deepStrictEqual(util.inspect(map), '(Num -> Num) -> Arr(Num) -> Arr(Num)')
+        assert.deepStrictEqual(util.inspect(map(add1)), 'Arr(Num) -> Arr(Num)')
         assert.deepStrictEqual(numberToString.toString(), rawFn.toString())
       })
 

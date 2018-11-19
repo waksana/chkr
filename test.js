@@ -13,7 +13,7 @@ function testType(Type, data) {
     assert.deepStrictEqual(Type.check(sample), sample)
     data.forEach(([input, output], i) => {
       if(output === throws) {
-        assert.throws(() => Type.check(input), {}, `${util.inspect(Type)} should thorws for ${String(input)} in case ${i}`)
+        assert.throws(() => Type.check(input), `${util.inspect(Type)} should thorws for ${String(input)} in case ${i}`)
       }
       else {
         assert.deepStrictEqual(Type.check(input), output)

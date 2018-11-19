@@ -4,9 +4,19 @@ const inspect = util.inspect.custom
 const chkr = Symbol('chkr')
 const chkrFn = Symbol('chkrFn')
 
+const wrapError = fn => function checker(...p) {
+  try {
+    return fn(...p)
+  }
+  catch(e) {
+    Error.captureStackTrace(e, checker)
+    throw e
+  }
+}
+
 const indent = str => '  ' + str.replace(/\n/g, '\n  ')
 const random = values => values[Math.floor(Math.random() * values.length)]
-const cl = (...fn) => v => fn.reduce((r, f) => f(r), v)
+const cl = (...fn) => wrapError(v => fn.reduce((r, f) => f(r), v))
 
 const parse = v => {
   if(!util.isString(v)) return v
@@ -20,10 +30,10 @@ const parse = v => {
 
 const special = str => (depth, opts) => opts.stylize(str[0], 'special')
 
-const judge = (fn, message) => v => {
+const judge = (fn, message) => wrapError(v => {
   if(fn(v)) return v
   throw new Error(message)
-}
+})
 
 const objMap = fn => obj => Object.keys(obj).reduce((ret, key) => {
   let res = fn(obj[key])
@@ -51,14 +61,34 @@ const func = (Types, fn) => {
     return funcType.check(fn)
 
   const wrappedFn = (input, ...params) => {
-    const res = fn(funcType[chkr].Input.check(input), ...params)
+    let checkedInput
+    try {
+      checkedInput = funcType[chkr].Input.check(input)
+    }
+    catch(e) {
+      let err = new Error(`Input of (${util.inspect(wrappedFn)}) ${e.message}`)
+      Error.captureStackTrace(err, wrappedFn)
+      throw err
+    }
+    const res = fn(checkedInput, ...params)
     if(util.isFunction(res)) {
       return func([funcType[chkr].Output], res)
     }
     else if(res instanceof Promise)
-      return res.then(funcType[chkr].Output.check)
-    else
-      return funcType[chkr].Output.check(res)
+      return res.then(funcType[chkr].Output.check).catch(err => {
+        Error.captureStackTrace(err, wrappedFn)
+        throw err
+      })
+    else {
+      try {
+        return funcType[chkr].Output.check(res)
+      }
+      catch(e) {
+        let err = new Error(`Output of (${util.inspect(wrappedFn)}) ${e.message}`)
+        Error.captureStackTrace(err, wrappedFn)
+        throw err
+      }
+    }
   }
 
   wrappedFn[chkrFn] = funcType
@@ -147,7 +177,7 @@ const Const = v => ({
 const OrSymbol = Symbol('Or')
 const Or = (...Types) => ({
   id: [OrSymbol, Types.map(type => type.id)],
-  check: v => {
+  check: wrapError(v => {
     let ret
     let errors = []
     let matchSome = Types.some(Type => {
@@ -162,7 +192,7 @@ const Or = (...Types) => ({
     })
     if(matchSome) return ret
     throw new Error('All\n' + indent(errors.join('\n')))
-  },
+  }),
   sample: (i) => {
     if(util.isNumber(i))
       return Types[i].sample()

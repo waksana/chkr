@@ -153,7 +153,7 @@ const Bool = {
 
 const Time = {
   id: Symbol('Time'),
-  check: cl(v => new Date(v), judge(v => v.toString() !== 'Invalid Date', 'Is Not a Time')),
+  check: cl(judge(v => !util.isNullOrUndefined(v), 'Is Not a Time'), v => new Date(v), judge(v => v.toString() !== 'Invalid Date', 'Is Not a Time')),
   sample: () => new Date,
   [inspect]: special`Time`,
   [chkr]: true,

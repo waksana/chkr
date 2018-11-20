@@ -82,6 +82,8 @@ describe('Chkr', () => {
     it('Time', testType(Time, [
       [new Date('2018-08-18'), new Date('2018-08-18')],
       [new Date('test'), throws],
+      [undefined, throws],
+      [null, throws],
       ['2018-08-24T06:39:04.908Z', new Date('2018-08-24T06:39:04.908Z')],
     ]))
   })

@@ -1,6 +1,6 @@
 {
   "name": "chkr",
-  "version": "6.1.5",
+  "version": "6.1.6",
   "description": "chkr brings type system into vanilla js",
   "main": "index.js",
   "scripts": {

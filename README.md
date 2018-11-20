@@ -13,12 +13,23 @@ npm install chkr
 ## Example
 
 ```javascript
-const {Num, Optional, Arr, Str, Bool} = require('chkr');
+const {func, Num, Optional, Arr, Str, Bool} = require('chkr');
+
+//function with signature
+const add1 = func([Num, Num], n => n + 1)
+
+//curry
+const add = func([Num, Num, Num], a => b => a + b)
+
+//simple type check
 Num.check(1) //==> 1
 Num.check('1') //throws error
 Num.check('a') //throws error
+
+//type combination
 Optional(Num).check() //===> undefined
 Arr(Num).check([1,2,3]) //===> [1,2,3]
+
 console.log(Obj({
   user: Str,
   age: Num,

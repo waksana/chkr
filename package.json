@@ -1,7 +1,7 @@
 {
   "name": "chkr",
   "version": "6.1.4",
-  "description": "chkr helps you to build api quickly",
+  "description": "chkr brings type system into vanilla js",
   "main": "index.js",
   "scripts": {
     "test": "nyc --reporter=html --reporter=text mocha",
@@ -12,7 +12,11 @@
     "url": "https://github.com/waksana/chkr.git"
   },
   "keywords": [
-    "filter"
+    "type",
+    "check",
+    "signature",
+    "combine",
+    "recursive"
   ],
   "author": "waksana",
   "license": "MIT",

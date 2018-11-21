@@ -177,12 +177,12 @@ const Const = v => ({
 const OrSymbol = Symbol('Or')
 const Or = (...Types) => ({
   id: [OrSymbol, Types.map(type => type.id)],
-  check: wrapError(v => {
+  check: wrapError((v, context) => {
     let ret
     let errors = []
     let matchSome = Types.some(Type => {
       try {
-        ret = Type.check(v)
+        ret = Type.check(v, context)
       }
       catch(e) {
         errors.push(e.message)
@@ -209,12 +209,12 @@ const Or = (...Types) => ({
 const ObjSymbol = Symbol('Obj')
 
 const objMapId = objMap(Type => Type.id)
-const objZipWithCheck = objZipWith((Type, value) => Type.check(value))
+const objZipWithCheck = context => objZipWith((Type, value) => Type.check(value))
 const objMapSample = objMap(Type => Type.sample())
 
 const Obj = TypeMap => ({
   id: [ObjSymbol, objMapId(TypeMap)],
-  check: cl(parse, judge(util.isObject, 'Is Not an Object'), objZipWithCheck(TypeMap)),
+  check: wrapError((v, context) => cl(parse, judge(util.isObject, 'Is Not an Object'), objZipWithCheck(context)(TypeMap))(v)),
   sample: () => objMapSample(TypeMap),
   [inspect]: (depth, opt) => {
     const fields = Object.keys(TypeMap)
@@ -240,31 +240,31 @@ const Optional = Type => Object.assign(Or(Null, Type), {
 const KvSymbol = Symbol('Kv')
 const Kv = ValueType => ({
   id: [KvSymbol, ValueType.id],
-  check: cl(parse, judge(util.isObject, 'Is Not an Object'), v => Object.keys(v).reduce((ret, key) => {
+  check: wrapError((v, context) => cl(parse, judge(util.isObject, 'Is Not an Object'), v => Object.keys(v).reduce((ret, key) => {
     try {
-      ret[key] = ValueType.check(v[key])
+      ret[key] = ValueType.check(v[key], context)
     }
     catch(e) {
       throw new Error(`Key '${key}' ${e.message}`)
     }
     return ret
-  }, {})),
+  }, {}))(v)),
   sample: () => ({key: ValueType.sample()}),
   [inspect]: (depth, opts) => opts.stylize(`Kv(${util.inspect(ValueType, {depth: depth - 1})})`, 'special'),
   [chkr]: true,
 })
 
-const ArrSymbol = Symbol('Kv')
+const ArrSymbol = Symbol('Arr')
 const Arr = Type => ({
   id: [ArrSymbol, Type.id],
-  check: cl(parse, judge(util.isArray, 'Is Not an Arr'), v => v.map((item, i) => {
+  check: wrapError((v, context) => cl(parse, judge(util.isArray, 'Is Not an Arr'), v => v.map((item, i) => {
     try {
-      return Type.check(item)
+      return Type.check(item, context)
     }
     catch(e) {
       throw new Error(`Index ${i} ${e.message}`)
     }
-  })),
+  }))(v)),
   sample: () => [Type.sample()],
   [inspect]: (depth, opts) => opts.stylize(`Arr(${util.inspect(Type, {depth: depth - 1})})`, 'special'),
   [chkr]: true,
@@ -273,14 +273,14 @@ const Arr = Type => ({
 const ArrTupleSymbol = Symbol('ArrTuple')
 const ArrTuple = (...Types) => ({
   id: [ArrTupleSymbol, Types.map(Type => Type.id)],
-  check: cl(parse, judge(util.isArray, 'Is Not an Arr'), v => Types.map((Type, i) => {
+  check: wrapError((v, context) => cl(parse, judge(util.isArray, 'Is Not an Arr'), v => Types.map((Type, i) => {
     try {
-      return Type.check(v[i])
+      return Type.check(v[i], context)
     }
     catch(e) {
       throw new Error(`Index ${i} ${e.message}`)
     }
-  })),
+  }))(v)),
   sample: () => Types.map(Type => Type.sample()),
   [inspect]: (depth, opts) => {
     let str = `ArrTuple(\n${indent(Types.map(Type => util.inspect(Type, {depth: depth - 1})).join(',\n'))}\n)`

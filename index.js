@@ -338,8 +338,15 @@ const withSelf = T => (...params) => {
   return newType
 }
 
+const transform = Type => reducer => Object.assign({
+  check: (v, context) => {
+    let checkedV = Type.check(v, context)
+    return reducer(checkedV, context)
+  }
+}, Type)
+
 const isFunc = Type => Type.id && Type.id[0] === FunSymbol
 const isType = Type => !!(Type && Type[chkr])
 const isEqualType = (T1, T2) => isType(T1) && isType(T2) && util.isDeepStrictEqual(T1.id, T2.id)
 
-module.exports = {Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType}
+module.exports = {Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType, transform}

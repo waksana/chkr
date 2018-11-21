@@ -101,3 +101,7 @@ sum(1)(2) === 3
 $ npm test
 $ npm run test-cov
 ```
+
+## Todo
+
+reduce with context

@@ -338,12 +338,13 @@ const withSelf = T => (...params) => {
   return newType
 }
 
-const transform = Type => reducer => Object.assign({
+const transform = Type => reducer => Object.assign({}, Type, {
+  id: Symbol(),
   check: (v, context) => {
     let checkedV = Type.check(v, context)
     return reducer(checkedV, context)
   }
-}, Type)
+})
 
 const isFunc = Type => Type.id && Type.id[0] === FunSymbol
 const isType = Type => !!(Type && Type[chkr])

@@ -102,6 +102,12 @@ $ npm test
 $ npm run test-cov
 ```
 
-## Todo
+## Lab
 
-reduce with context
+### Context
+
+`Type.check` with `context` as second parameter. It provids a runtime context
+
+### Transform
+
+transform a Type

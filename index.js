@@ -216,10 +216,16 @@ const Or = (...Types) => {
     return not(antiFold(not(mapper))(reducer)(init))
   }
 
+  let map = mapper => fold(mapper)((totalErr, err) => {
+    totalErr.message += `\n${indent(err.message)}`
+    return totalErr
+  })(new Error('All'))
+
   return {
     fold,
+    map,
     id: [OrSymbol, antiMap(Type => Type.id)()],
-    check: wrapError(fold(check)(errors => error => `${errors}\n${error.message}`)('All')),
+    check: wrapError(map(check)),
     sample: (i) => {
       if(util.isNumber(i))
         return Types[i].sample()
@@ -227,7 +233,7 @@ const Or = (...Types) => {
     },
     [inspect]: (depth, opt) => {
       let content = antiFold(Type => util.inspect(Type, {depth: depth - 1}))((ret, str) => `${ret}\n${str}`)('')()
-      return opt.stylize(`Obj({${indent(content)}\n})`, 'special')
+      return opt.stylize(`Or(${indent(content)}\n)`, 'special')
     },
     [chkr]: true,
   }
@@ -263,7 +269,7 @@ const Obj = TypeMap => {
     check: wrapError(map(check)),
     sample: () => map(sample)({}),
     [inspect]: (depth, opt) => {
-      let content = fold(Type => (_, key) => `${key}: ${util.inspect(Type, {depth: depth - 1})}`)((ret, str) => `${ret}\n${str}`)('')({})
+      let content = fold((Type, _, key) => `${key}: ${util.inspect(Type, {depth: depth - 1})}`)((ret, str) => `${ret}\n${str}`)('')({})
       return opt.stylize(`Obj({${indent(content)}\n})`, 'special')
     },
     [chkr]: true,

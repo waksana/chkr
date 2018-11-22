@@ -16,7 +16,7 @@ const wrapError = fn => function checker(...p) {
 
 const indent = str => '  ' + str.replace(/\n/g, '\n  ')
 const random = values => values[Math.floor(Math.random() * values.length)]
-const cl = (...fn) => wrapError(v => fn.reduce((r, f) => f(r), v))
+const cl = (...fn) => v => fn.reduce((r, f) => f(r), v)
 
 const not = (fn) => (...p) => {
   let res
@@ -41,10 +41,10 @@ const parse = v => {
 
 const special = str => (depth, opts) => opts.stylize(str[0], 'special')
 
-const judge = (fn, message) => wrapError(v => {
+const judge = (fn, message) => v => {
   if(fn(v)) return v
   throw new Error(message)
-})
+}
 
 const func = (Types, fn) => {
   let funcType = Func(...Types)
@@ -225,7 +225,7 @@ const Or = (...Types) => {
       return random(Types).sample()
     },
     [inspect]: (depth, opt) => {
-      let content = antiFold(Type => util.inspect(Type, {depth: depth - 1}))(ret => str => `${ret}\n${str}`)('')()
+      let content = antiFold(Type => util.inspect(Type, {depth: depth - 1}))((ret, str) => `${ret}\n${str}`)('')()
       return opt.stylize(`Obj({${indent(content)}\n})`, 'special')
     },
     [chkr]: true,
@@ -261,7 +261,7 @@ const Obj = TypeMap => {
     check: map(check),
     sample: () => map(sample)({}),
     [inspect]: (depth, opt) => {
-      let content = fold(Type => (_, key) => `${key}: ${util.inspect(Type, {depth: depth - 1})}`)(ret => str => `${ret}\n${str}`)('')({})
+      let content = fold(Type => (_, key) => `${key}: ${util.inspect(Type, {depth: depth - 1})}`)((ret, str) => `${ret}\n${str}`)('')({})
       return opt.stylize(`Obj({${indent(content)}\n})`, 'special')
     },
     [chkr]: true,
@@ -316,7 +316,7 @@ const ArrTupleSymbol = Symbol('ArrTuple')
 const ArrTuple = (...Types) => {
 
   let fold = mapper => reducer => init => value => {
-    let v = check(Arr, value)
+    let v = check(ArrV, value)
     return Types.reduce((ret, Type, idx) => {
       try {
         let res = mapper(Type, v[idx], idx, v)

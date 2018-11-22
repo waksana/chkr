@@ -3,7 +3,7 @@
 const assert = require('assert')
 const util = require('util')
 
-const {isEqualType, Func, func, Id, Arr, Null, Any, ArrTuple, Or, Const, withSelf, Kv, Time, Bool, Num, Str, Obj, Optional} = require('.')
+const {isEqualType, Func, func, Id, Arr, Null, Any, ArrTuple, Or, Const, withSelf, Kv, Time, Bool, Num, Str, Obj, Optional, mapulate, genMapulate} = require('.')
 
 const throws = Symbol()
 
@@ -277,6 +277,16 @@ describe('Chkr', () => {
           assert.equal(v(1)(2), 3)
         })
 
+      })
+    })
+  })
+
+  describe('iter', () => {
+    describe('mapulate', () => {
+      it('mapulate value', () => {
+        const Add = genMapulate(Num, (v, context) => v + context)
+        assert.deepStrictEqual(mapulate(Add, 4, 1), 5)
+        assert.deepStrictEqual(mapulate(Arr(Add), [1,2,3], 3), [4,5,6])
       })
     })
   })

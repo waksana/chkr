@@ -16,7 +16,7 @@ const wrapError = fn => function checker(...p) {
 
 const indent = str => '  ' + str.replace(/\n/g, '\n  ')
 const random = values => values[Math.floor(Math.random() * values.length)]
-const cl = (...fn) => v => fn.reduce((r, f) => f(r), v)
+const cl = (...fn) => wrapError(v => fn.reduce((r, f) => f(r), v))
 
 const not = (fn) => (...p) => {
   let res
@@ -41,10 +41,10 @@ const parse = v => {
 
 const special = str => (depth, opts) => opts.stylize(str[0], 'special')
 
-const judge = (fn, message) => v => {
+const judge = (fn, message) => wrapError(v => {
   if(fn(v)) return v
   throw new Error(message)
-}
+})
 
 const func = (Types, fn) => {
   let funcType = Func(...Types)
@@ -192,8 +192,9 @@ const Arr = Type => {
 
   return {
     fold,
+    map,
     id: [ArrV.id, Type.id],
-    check: map(check),
+    check: wrapError(map(check)),
     sample: () => [Type.sample()],
     [inspect]: (depth, opts) => opts.stylize(`Arr(${util.inspect(Type, {depth: depth - 1})})`, 'special'),
     [chkr]: true,
@@ -218,7 +219,7 @@ const Or = (...Types) => {
   return {
     fold,
     id: [OrSymbol, antiMap(Type => Type.id)()],
-    check: fold(check)(errors => error => `${errors}\n${error.message}`)('All'),
+    check: wrapError(fold(check)(errors => error => `${errors}\n${error.message}`)('All')),
     sample: (i) => {
       if(util.isNumber(i))
         return Types[i].sample()
@@ -257,8 +258,9 @@ const Obj = TypeMap => {
 
   return {
     fold,
+    map,
     id: [ObjV.id, map(Type => Type.id)({})],
-    check: map(check),
+    check: wrapError(map(check)),
     sample: () => map(sample)({}),
     [inspect]: (depth, opt) => {
       let content = fold(Type => (_, key) => `${key}: ${util.inspect(Type, {depth: depth - 1})}`)((ret, str) => `${ret}\n${str}`)('')({})
@@ -304,8 +306,9 @@ const Kv = ValueType => {
 
   return {
     fold,
+    map,
     id: [ObjV.id, ValueType.id],
-    check: map(check),
+    check: wrapError(map(check)),
     sample: () => ({key: ValueType.sample()}),
     [inspect]: (depth, opts) => opts.stylize(`Kv(${util.inspect(ValueType, {depth: depth - 1})})`, 'special'),
     [chkr]: true,
@@ -332,8 +335,9 @@ const ArrTuple = (...Types) => {
 
   return {
     fold,
+    map,
     id: [ArrTupleSymbol, map(Type => Type.id)([])],
-    check: map(check),
+    check: wrapError(map(check)),
     sample: () => map(sample)([]),
     [inspect]: (depth, opts) => {
       let content = fold(Type => util.inspect(Type, {depth: depth - 1}))((ret, str) => `${ret}\n${str}`)('')([])
@@ -399,4 +403,22 @@ const isEqualType = (T1, T2) => isType(T1) && isType(T2) && util.isDeepStrictEqu
 const check = (Type, v) => Type.check(v)
 const sample = Type => Type.sample()
 
-module.exports = {Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType, check }
+const mapulate = wrapError((Type, v, context) => {
+  let res
+  if(Type.map) {
+    res = Type.map((Type, v) => mapulate(Type, v, context))(v)
+  }
+  else {
+    res = check(Type, v)
+  }
+  if(Type.mapulate)
+    res = Type.mapulate(res, context)
+  return res
+})
+
+const genMapulate = (Type, fn) => Object.assign({}, Type, {
+  id: Symbol(),
+  mapulate: fn,
+})
+
+module.exports = {Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType, check, mapulate, genMapulate}

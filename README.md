@@ -104,10 +104,12 @@ $ npm run test-cov
 
 ## Lab
 
-### Context
+### Mapulate
 
-`Type.check` with `context` as second parameter. It provids a runtime context
+mapulate a value
 
-### Transform
-
-transform a Type
+```javascript
+let Add = genMapulate(Num, (v, context) => v + context)
+mapulate(Add, 1, 3) //==> 4
+mapulate(Arr(Add), [1, 2, 3], 6) //==> [7, 8, 9]
+```

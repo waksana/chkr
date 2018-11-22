@@ -18,6 +18,17 @@ const indent = str => '  ' + str.replace(/\n/g, '\n  ')
 const random = values => values[Math.floor(Math.random() * values.length)]
 const cl = (...fn) => wrapError(v => fn.reduce((r, f) => f(r), v))
 
+const not = (fn) => (...p) => {
+  let res
+  try {
+    res = fn(...p)
+  }
+  catch(e) {
+    return e
+  }
+  throw res
+}
+
 const parse = v => {
   if(!util.isString(v)) return v
   try {
@@ -34,26 +45,6 @@ const judge = (fn, message) => wrapError(v => {
   if(fn(v)) return v
   throw new Error(message)
 })
-
-const objMap = fn => obj => Object.keys(obj).reduce((ret, key) => {
-  let res = fn(obj[key])
-  if(!util.isNullOrUndefined(res))
-    ret[key] = res
-  return ret
-}, {})
-
-const objZipWith = fn => a => b =>
-  Object.keys(a).reduce((ret, key) => {
-    try {
-      let res = fn(a[key], b[key])
-      if(!util.isNullOrUndefined(res))
-        ret[key] = res
-      return ret
-    }
-    catch(e) {
-      throw new Error(`Field '${key}' ${e.message}`)
-    }
-  }, {})
 
 const func = (Types, fn) => {
   let funcType = Func(...Types)
@@ -159,9 +150,21 @@ const Time = {
   [chkr]: true,
 }
 
-/*
- * algebra type sys
- */
+const ObjV = {
+  id: Symbol('ObjV'),
+  check: cl(parse, judge(util.isObject, 'Is Not an Obj')),
+  sample: () => ({}),
+  [inspect]: special`Obj`,
+  [chkr]: true,
+}
+
+const ArrV = {
+  id: Symbol('ArrV'),
+  check: cl(parse, judge(util.isArray, 'Is Not an Arr')),
+  sample: () => ([]),
+  [inspect]: special`Arr`,
+  [chkr]: true,
+}
 
 //1 type
 const Const = v => ({
@@ -172,58 +175,98 @@ const Const = v => ({
   [chkr]: true,
 })
 
+const Arr = Type => {
+
+  let fold = mapper => reducer => init => value =>
+    check(ArrV, value).reduce((ret, v, idx) => {
+      try {
+        let res = mapper(Type, v, idx, value)
+        return reducer(ret, res, idx, value)
+      }
+      catch(e) {
+        throw new Error(`Index ${idx} ${e.message}`)
+      }
+    }, init)
+
+  let map = mapper => fold(mapper)((arr, item) => arr.concat(item))([])
+
+  return {
+    fold,
+    id: [ArrV.id, Type.id],
+    check: map(check),
+    sample: () => [Type.sample()],
+    [inspect]: (depth, opts) => opts.stylize(`Arr(${util.inspect(Type, {depth: depth - 1})})`, 'special'),
+    [chkr]: true,
+  }
+}
 
 //Sum Type
 const OrSymbol = Symbol('Or')
-const Or = (...Types) => ({
-  id: [OrSymbol, Types.map(type => type.id)],
-  check: wrapError((v, context) => {
-    let ret
-    let errors = []
-    let matchSome = Types.some(Type => {
-      try {
-        ret = Type.check(v, context)
-      }
-      catch(e) {
-        errors.push(e.message)
-        return false
-      }
-      return true
-    })
-    if(matchSome) return ret
-    throw new Error('All\n' + indent(errors.join('\n')))
-  }),
-  sample: (i) => {
-    if(util.isNumber(i))
-      return Types[i].sample()
-    return random(Types).sample()
-  },
-  [inspect]: (depth, opts) => {
-    let str = `Or(\n${indent(Types.map(Type => util.inspect(Type, {depth: depth - 1})).join(',\n'))}\n)`
-    return opts.stylize(str, 'special')
-  },
-  [chkr]: true,
-})
+const Or = (...Types) => {
+  let antiFold = mapper => reducer => init => value =>
+    Types.reduce((ret, Type, idx) => {
+      let res = mapper(Type, value, idx, value)
+      return reducer(ret, res, idx, value)
+    }, init)
+
+  let antiMap = mapper => antiFold(mapper)((ret, res) => ret.concat(res))([])
+
+  let fold = mapper => reducer => init => {
+    return not(antiFold(not(mapper))(reducer)(init))
+  }
+
+  return {
+    fold,
+    id: [OrSymbol, antiMap(Type => Type.id)()],
+    check: fold(check)(errors => error => `${errors}\n${error.message}`)('All'),
+    sample: (i) => {
+      if(util.isNumber(i))
+        return Types[i].sample()
+      return random(Types).sample()
+    },
+    [inspect]: (depth, opt) => {
+      let content = antiFold(Type => util.inspect(Type, {depth: depth - 1}))(ret => str => `${ret}\n${str}`)('')()
+      return opt.stylize(`Obj({${indent(content)}\n})`, 'special')
+    },
+    [chkr]: true,
+  }
+}
 
 //product type
-const ObjSymbol = Symbol('Obj')
 
-const objMapId = objMap(Type => Type.id)
-const objZipWithCheck = context => objZipWith((Type, value) => Type.check(value))
-const objMapSample = objMap(Type => Type.sample())
+const Obj = TypeMap => {
+  let fold = mapper => reducer => init => value => {
+    let v = check(ObjV, value)
+    return Object.keys(TypeMap).reduce((ret, key) => {
+      try {
+        let res = mapper(TypeMap[key], v[key], key, v)
+        return reducer(ret, res, key, v)
+      }
+      catch(e) {
+        throw new Error(`Field '${key}' ${e.message}`)
+      }
+    }, init)
+  }
 
-const Obj = TypeMap => ({
-  id: [ObjSymbol, objMapId(TypeMap)],
-  check: wrapError((v, context) => cl(parse, judge(util.isObject, 'Is Not an Object'), objZipWithCheck(context)(TypeMap))(v)),
-  sample: () => objMapSample(TypeMap),
-  [inspect]: (depth, opt) => {
-    const fields = Object.keys(TypeMap)
-      .map(key => `${key}: ${util.inspect(TypeMap[key], {depth: depth - 1})}`)
-      .join(',\n')
-    return opt.stylize(`Obj({\n${indent(fields)}\n})`, 'special')
-  },
-  [chkr]: true,
-})
+  let map = mapper =>
+    fold(mapper)((ret, v, key) => {
+      if(!util.isNullOrUndefined(v))
+        return Object.assign({[key]: v}, ret)
+      return ret
+    })({})
+
+  return {
+    fold,
+    id: [ObjV.id, map(Type => Type.id)({})],
+    check: map(check),
+    sample: () => map(sample)({}),
+    [inspect]: (depth, opt) => {
+      let content = fold(Type => (_, key) => `${key}: ${util.inspect(Type, {depth: depth - 1})}`)(ret => str => `${ret}\n${str}`)('')({})
+      return opt.stylize(`Obj({${indent(content)}\n})`, 'special')
+    },
+    [chkr]: true,
+  }
+}
 
 /*
  * useful type
@@ -237,57 +280,68 @@ const Optional = Type => Object.assign(Or(Null, Type), {
  * native higher order types
  */
 
-const KvSymbol = Symbol('Kv')
-const Kv = ValueType => ({
-  id: [KvSymbol, ValueType.id],
-  check: wrapError((v, context) => cl(parse, judge(util.isObject, 'Is Not an Object'), v => Object.keys(v).reduce((ret, key) => {
-    try {
-      ret[key] = ValueType.check(v[key], context)
-    }
-    catch(e) {
-      throw new Error(`Key '${key}' ${e.message}`)
-    }
-    return ret
-  }, {}))(v)),
-  sample: () => ({key: ValueType.sample()}),
-  [inspect]: (depth, opts) => opts.stylize(`Kv(${util.inspect(ValueType, {depth: depth - 1})})`, 'special'),
-  [chkr]: true,
-})
+const Kv = ValueType => {
 
-const ArrSymbol = Symbol('Arr')
-const Arr = Type => ({
-  id: [ArrSymbol, Type.id],
-  check: wrapError((v, context) => cl(parse, judge(util.isArray, 'Is Not an Arr'), v => v.map((item, i) => {
-    try {
-      return Type.check(item, context)
-    }
-    catch(e) {
-      throw new Error(`Index ${i} ${e.message}`)
-    }
-  }))(v)),
-  sample: () => [Type.sample()],
-  [inspect]: (depth, opts) => opts.stylize(`Arr(${util.inspect(Type, {depth: depth - 1})})`, 'special'),
-  [chkr]: true,
-})
+  let fold = mapper => reducer => init => value => {
+    let v = check(ObjV, value)
+    return Object.keys(v).reduce((ret, key) => {
+      try {
+        let res = mapper(ValueType, v[key], key, v)
+        return reducer(ret, res, key, v)
+      }
+      catch(e) {
+        throw new Error(`Key '${key}' ${e.message}`)
+      }
+    }, init)
+  }
+
+  let map = mapper =>
+    fold(mapper)((ret, v, key) => {
+      if(!util.isNullOrUndefined(v))
+        return Object.assign({[key]: v}, ret)
+      return ret
+    })({})
+
+  return {
+    fold,
+    id: [ObjV.id, ValueType.id],
+    check: map(check),
+    sample: () => ({key: ValueType.sample()}),
+    [inspect]: (depth, opts) => opts.stylize(`Kv(${util.inspect(ValueType, {depth: depth - 1})})`, 'special'),
+    [chkr]: true,
+  }
+}
 
 const ArrTupleSymbol = Symbol('ArrTuple')
-const ArrTuple = (...Types) => ({
-  id: [ArrTupleSymbol, Types.map(Type => Type.id)],
-  check: wrapError((v, context) => cl(parse, judge(util.isArray, 'Is Not an Arr'), v => Types.map((Type, i) => {
-    try {
-      return Type.check(v[i], context)
-    }
-    catch(e) {
-      throw new Error(`Index ${i} ${e.message}`)
-    }
-  }))(v)),
-  sample: () => Types.map(Type => Type.sample()),
-  [inspect]: (depth, opts) => {
-    let str = `ArrTuple(\n${indent(Types.map(Type => util.inspect(Type, {depth: depth - 1})).join(',\n'))}\n)`
-    return opts.stylize(str, 'special')
-  },
-  [chkr]: true,
-})
+const ArrTuple = (...Types) => {
+
+  let fold = mapper => reducer => init => value => {
+    let v = check(Arr, value)
+    return Types.reduce((ret, Type, idx) => {
+      try {
+        let res = mapper(Type, v[idx], idx, v)
+        return reducer(ret, res, idx, v)
+      }
+      catch(e) {
+        throw new Error(`Index ${idx} ${e.message}`)
+      }
+    }, init)
+  }
+
+  let map = mapper => fold(mapper)((ret, res) => ret.concat(res))([])
+
+  return {
+    fold,
+    id: [ArrTupleSymbol, map(Type => Type.id)([])],
+    check: map(check),
+    sample: () => map(sample)([]),
+    [inspect]: (depth, opts) => {
+      let content = fold(Type => util.inspect(Type, {depth: depth - 1}))((ret, str) => `${ret}\n${str}`)('')([])
+      return opts.stylize(`ArrTuple(${indent(content)}\n)`, 'special')
+    },
+    [chkr]: true,
+  }
+}
 
 const FunSymbol = Symbol('Func')
 const Func = (...Types) => {
@@ -338,16 +392,11 @@ const withSelf = T => (...params) => {
   return newType
 }
 
-const transform = Type => reducer => Object.assign({}, Type, {
-  id: Symbol(),
-  check: (v, context) => {
-    let checkedV = Type.check(v, context)
-    return reducer(checkedV, context)
-  }
-})
-
 const isFunc = Type => Type.id && Type.id[0] === FunSymbol
 const isType = Type => !!(Type && Type[chkr])
 const isEqualType = (T1, T2) => isType(T1) && isType(T2) && util.isDeepStrictEqual(T1.id, T2.id)
 
-module.exports = {Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType, transform}
+const check = (Type, v) => Type.check(v)
+const sample = Type => Type.sample()
+
+module.exports = {Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType, check }

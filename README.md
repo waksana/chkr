@@ -22,13 +22,13 @@ const add1 = func([Num, Num], n => n + 1)
 const add = func([Num, Num, Num], a => b => a + b)
 
 //simple type check
-Num.check(1) //==> 1
-Num.check('1') //throws error
-Num.check('a') //throws error
+check(Num, 1) //==> 1
+check(Num, '1') //throws error
+check(Num, 'a') //throws error
 
 //type combination
-Optional(Num).check() //===> undefined
-Arr(Num).check([1,2,3]) //===> [1,2,3]
+check(Optional(Num)) //===> undefined
+check(Arr(Num), [1,2,3]) //===> [1,2,3]
 
 console.log(Obj({
   user: Str,
@@ -44,7 +44,7 @@ console.log(Obj({
 
 a type is a js object with `check` and `sample` as it's method. it's `inspect` symbol is customized to show the infomation of itself.
 
-#### `.check`
+#### `check`
 
 the `check` method checks and parse the input value and returns then transformed value or throw an error if the input value is not the required type
 
@@ -109,7 +109,16 @@ $ npm run test-cov
 mapulate a value
 
 ```javascript
-let Add = genMapulate(Num, (v, context) => v + context)
-mapulate(Add, 1, 3) //==> 4
-mapulate(Arr(Add), [1, 2, 3], 6) //==> [7, 8, 9]
+let Add = genMapulate(Num, {
+  cal: (v, context) => v + context
+})
+let cal = n => mapulate((Type, v) => {
+  if(Type.check)
+    v = Type.check(v)
+  if(Type.cal)
+    v = Type.cal(v, n)
+  return v
+})
+cal(3)(Add, 1) //==> 4
+cal(6)(Add, [1, 2, 3]) //==> [7, 8, 9]
 ```

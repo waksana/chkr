@@ -3,20 +3,20 @@
 const assert = require('assert')
 const util = require('util')
 
-const {isEqualType, Func, func, Id, Arr, Null, Any, ArrTuple, Or, Const, withSelf, Kv, Time, Bool, Num, Str, Obj, Optional, mapulate, genMapulate} = require('.')
+const {isEqualType, Func, func, Id, Arr, Null, Any, ArrTuple, Or, Const, withSelf, Kv, Time, Bool, Num, Str, Obj, Optional, mapulate, genMapulate, check, ArrV, ObjV} = require('.')
 
 const throws = Symbol()
 
 function testType(Type, data) {
   return () => {
     let sample = Type.sample()
-    assert.deepStrictEqual(Type.check(sample), sample)
+    assert.deepStrictEqual(check(Type, sample), sample)
     data.forEach(([input, output], i) => {
       if(output === throws) {
-        assert.throws(() => Type.check(input), `${util.inspect(Type)} should thorws for ${String(input)} in case ${i}`)
+        assert.throws(() => check(Type, input), `${util.inspect(Type)} should thorws for ${String(input)} in case ${i}`)
       }
       else {
-        assert.deepStrictEqual(Type.check(input), output)
+        assert.deepStrictEqual(check(Type, input), output)
       }
     })
   }
@@ -85,6 +85,29 @@ describe('Chkr', () => {
       [undefined, throws],
       [null, throws],
       ['2018-08-24T06:39:04.908Z', new Date('2018-08-24T06:39:04.908Z')],
+    ]))
+
+    it('ArrV', testType(ArrV, [
+      [null, throws],
+      [undefined, throws],
+      ['', throws],
+      [true, throws],
+      [42, throws],
+      [{}, throws],
+      [[], []],
+      [[1, 2, 3], [1, 2, 3]],
+    ]))
+
+    it('ObjV', testType(ObjV, [
+      [null, throws],
+      [undefined, throws],
+      ['', throws],
+      [true, throws],
+      [42, throws],
+      [[], throws],
+      [[1, 2, 3], throws],
+      [{}, {}],
+      [{a: 1}, {a: 1}],
     ]))
   })
 
@@ -160,7 +183,7 @@ describe('Chkr', () => {
 
       let objType = Obj({a: Num, b: Str})
       let outputSample = Func(Num, objType).sample()(1)
-      assert.deepStrictEqual(objType.check(outputSample), outputSample)
+      assert.deepStrictEqual(check(objType, outputSample), outputSample)
     })
   })
 
@@ -245,7 +268,7 @@ describe('Chkr', () => {
 
         Func(Func(Num, Num), Arr(Num), Arr(Num)).check(map)
         Func(Arr(Num), Arr(Num)).check(map(add1))
-        Arr(Num).check(map(add1)([1,2,3]))
+        check(Arr(Num), map(add1)([1,2,3]))
 
         let sum = func([Num, Num, Num, Num], a => b => a + b)
         assert.throws(() => Func(Num, Num).check(sum))
@@ -284,9 +307,18 @@ describe('Chkr', () => {
   describe('iter', () => {
     describe('mapulate', () => {
       it('mapulate value', () => {
-        const Add = genMapulate(Num, (v, context) => v + context)
-        assert.deepStrictEqual(mapulate(Add, 4, 1), 5)
-        assert.deepStrictEqual(mapulate(Arr(Add), [1,2,3], 3), [4,5,6])
+        const Add = genMapulate(Num, {
+          calculate: (v, context) => v + context
+        })
+        const calculate = context => mapulate((Type, v) => {
+          if(Type.check)
+            v = Type.check(v)
+          if(Type.calculate)
+            v = Type.calculate(v, context)
+          return v
+        })
+        assert.deepStrictEqual(calculate(1)(Add, 4), 5)
+        assert.deepStrictEqual(calculate(3)(Arr(Add), [1,2,3]), [4,5,6])
       })
     })
   })

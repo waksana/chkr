@@ -410,4 +410,13 @@ const genMapulate = (Type, fns) => Object.assign({}, Type, {
   id: Symbol(),
 }, fns)
 
-module.exports = {ObjV, ArrV, Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType, mapulate, genMapulate, check}
+const signature = (...p) => {
+  if(p.length == 1)
+    p.push(Id)
+  return (target, name, descriptor) => {
+    descriptor.value = func(p, descriptor.value)
+    return descriptor
+  }
+}
+
+module.exports = {ObjV, ArrV, Id, Null, Any, Num, Str, Bool, Time, Or, Obj, Const, Optional, Kv, Arr, ArrTuple, Func, func, withSelf, isType, isEqualType, mapulate, genMapulate, check, signature}

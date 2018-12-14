@@ -122,3 +122,16 @@ let cal = n => mapulate((Type, v) => {
 cal(3)(Add, 1) //==> 4
 cal(6)(Add, [1, 2, 3]) //==> [7, 8, 9]
 ```
+
+### Signature Decorator
+
+set a signature for a class method
+
+```javascript
+class A {
+  @signature(Num, Num, Num)
+  sum(a) {
+    return b => a + b
+  }
+}
+```

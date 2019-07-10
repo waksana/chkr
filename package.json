@@ -1,7 +1,7 @@
 {
   "name": "chkr",
   "version": "7.0.0",
-  "description": "chkr brings type system into vanilla js",
+  "description": "js type check",
   "main": "index.js",
   "scripts": {
     "test": "nyc --reporter=html --reporter=text mocha",
@@ -13,10 +13,7 @@
   },
   "keywords": [
     "type",
-    "check",
-    "signature",
-    "combine",
-    "recursive"
+    "check"
   ],
   "author": "waksana",
   "license": "MIT",

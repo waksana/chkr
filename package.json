@@ -1,6 +1,6 @@
 {
   "name": "chkr",
-  "version": "7.0.0",
+  "version": "8.0.0",
   "description": "js type check",
   "main": "index.js",
   "scripts": {
